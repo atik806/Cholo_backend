@@ -1,0 +1,119 @@
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import type { CreateOrderDto } from './dto/create-order.dto.js';
+import { createSupabaseAdminClient } from '../../config/supabase.config.js';
+
+@Injectable()
+export class OrdersService {
+  private supabase = createSupabaseAdminClient();
+
+  async findByUser(userId: string) {
+    const { data, error } = await this.supabase
+      .from('orders')
+      .select('*, order_items(*)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw new InternalServerErrorException(error.message);
+    return data || [];
+  }
+
+  async findById(id: string, userId: string) {
+    const { data, error } = await this.supabase
+      .from('orders')
+      .select('*, order_items(*)')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single();
+
+    if (error || !data) throw new NotFoundException('Order not found');
+    return data;
+  }
+
+  async create(userId: string, dto: CreateOrderDto) {
+    const { data: cartItems, error: cartError } = await this.supabase
+      .from('cart_items')
+      .select('*, products(*)')
+      .eq('user_id', userId);
+
+    if (cartError) throw new InternalServerErrorException(cartError.message);
+    if (!cartItems || cartItems.length === 0) {
+      throw new BadRequestException('Cart is empty');
+    }
+
+    const subtotal = cartItems.reduce(
+      (sum, item) => sum + (item.products?.price || 0) * item.quantity,
+      0,
+    );
+    const shippingCost = subtotal >= 50 ? 0 : 5;
+    const tax = subtotal * 0.08;
+    const total = subtotal + shippingCost + tax;
+
+    const { data: order, error: orderError } = await this.supabase
+      .from('orders')
+      .insert({
+        user_id: userId,
+        status: 'pending',
+        subtotal: Math.round(subtotal * 100) / 100,
+        shipping_cost: shippingCost,
+        tax: Math.round(tax * 100) / 100,
+        total: Math.round(total * 100) / 100,
+        shipping_address: dto.shipping_address,
+        payment_method: dto.payment_method,
+        payment_status: 'pending',
+      })
+      .select()
+      .single();
+
+    if (orderError) throw new InternalServerErrorException(orderError.message);
+
+    const orderItems = cartItems.map((item) => ({
+      order_id: order.id,
+      product_id: item.product_id,
+      product_name: item.products?.name || '',
+      product_image: item.products?.images?.[0] || null,
+      price: item.products?.price || 0,
+      quantity: item.quantity,
+      selected_size: item.selected_size,
+      selected_color: item.selected_color,
+    }));
+
+    const { error: itemsError } = await this.supabase
+      .from('order_items')
+      .insert(orderItems);
+    if (itemsError) {
+      await this.supabase.from('orders').delete().eq('id', order.id);
+      throw new InternalServerErrorException('Failed to create order items');
+    }
+
+    await this.supabase.from('cart_items').delete().eq('user_id', userId);
+    return this.findById(order.id, userId);
+  }
+
+  async cancelOrder(orderId: string, userId: string) {
+    const { data: order, error: findError } = await this.supabase
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .eq('user_id', userId)
+      .single();
+
+    if (findError || !order) throw new NotFoundException('Order not found');
+    if (order.status !== 'pending')
+      throw new BadRequestException('Only pending orders can be cancelled');
+
+    const { data, error } = await this.supabase
+      .from('orders')
+      .update({ status: 'cancelled' })
+      .eq('id', orderId)
+      .select()
+      .single();
+
+    if (error) throw new InternalServerErrorException(error.message);
+    return data;
+  }
+}
