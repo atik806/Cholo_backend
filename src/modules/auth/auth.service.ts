@@ -182,14 +182,11 @@ export class AuthService {
 
     const { data: existingProfile } = await this.supabaseAdmin
       .from('profiles')
-      .select('id, role')
+      .select('id')
       .eq('email', dto.email)
       .maybeSingle();
 
     if (existingProfile) {
-      if (existingProfile.role !== 'admin') {
-        throw new UnauthorizedException('Invalid admin credentials');
-      }
       await this.supabaseAdmin.auth.admin.updateUserById(existingProfile.id, {
         password: dto.password,
         email_confirm: true,
