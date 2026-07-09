@@ -12,6 +12,7 @@ export const QueryProductsSchema = z.object({
     .default('popular'),
   page: z.coerce.number().int().min(1).optional().default(1),
   limit: z.coerce.number().int().min(1).max(100).optional().default(12),
+  ids: z.array(z.string().uuid()).optional(),
 });
 
 export type QueryProductsDto = z.infer<typeof QueryProductsSchema>;

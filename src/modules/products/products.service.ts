@@ -43,6 +43,10 @@ export class ProductsService {
     if (priceMax !== undefined) dbQuery = dbQuery.lte('price', priceMax);
     if (minRating !== undefined) dbQuery = dbQuery.gte('rating', minRating);
 
+    if (query.ids && query.ids.length > 0) {
+      dbQuery = dbQuery.in('id', query.ids);
+    }
+
     switch (sort) {
       case 'newest':
         dbQuery = dbQuery.order('created_at', { ascending: false });
