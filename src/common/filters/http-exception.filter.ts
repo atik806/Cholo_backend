@@ -38,9 +38,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
       );
     }
 
+    const sanitized =
+      status === HttpStatus.INTERNAL_SERVER_ERROR
+        ? 'Internal server error'
+        : message;
+
     response.status(status).json({
       success: false,
-      message,
+      message: sanitized,
       ...(errors ? { errors } : {}),
       statusCode: status,
     });
