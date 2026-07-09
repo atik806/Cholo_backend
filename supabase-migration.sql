@@ -25,11 +25,15 @@ CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id)
 CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON reviews(product_id);
 CREATE INDEX IF NOT EXISTS idx_wishlists_user_id ON wishlists(user_id);
 
--- 4. Add INSERT/UPDATE/DELETE RLS policies for order_items
-CREATE POLICY IF NOT EXISTS "Users can insert own order items" ON order_items
-  FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND orders.user_id = auth.uid())
-  );
+-- 4. Add INSERT RLS policy for order_items
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can insert own order items' AND tablename = 'order_items') THEN
+    CREATE POLICY "Users can insert own order items" ON order_items
+      FOR INSERT WITH CHECK (
+        EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND orders.user_id = auth.uid())
+      );
+  END IF;
+END $$;
 
 -- 5. Auto-update product rating via trigger
 CREATE OR REPLACE FUNCTION recalc_product_rating()
@@ -70,13 +74,46 @@ CREATE TABLE IF NOT EXISTS contact_messages (
 
 ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can insert contact messages" ON contact_messages
-  FOR INSERT WITH CHECK (true);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can insert contact messages' AND tablename = 'contact_messages') THEN
+    CREATE POLICY "Anyone can insert contact messages" ON contact_messages
+      FOR INSERT WITH CHECK (true);
+  END IF;
+END $$;
 
-CREATE POLICY "Admin can view contact messages" ON contact_messages
-  FOR SELECT USING (auth.role() = 'service_role');
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can view contact messages' AND tablename = 'contact_messages') THEN
+    CREATE POLICY "Admin can view contact messages" ON contact_messages
+      FOR SELECT USING (auth.role() = 'service_role');
+  END IF;
+END $$;
 
--- 7. Denormalized product_count on categories via trigger
+-- 7. Add ON DELETE actions for missing foreign keys
+ALTER TABLE products
+  DROP CONSTRAINT IF EXISTS products_category_id_fkey,
+  ADD CONSTRAINT products_category_id_fkey
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT;
+
+ALTER TABLE cart_items
+  DROP CONSTRAINT IF EXISTS cart_items_product_id_fkey,
+  ADD CONSTRAINT cart_items_product_id_fkey
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;
+
+ALTER TABLE order_items
+  DROP CONSTRAINT IF EXISTS order_items_product_id_fkey,
+  ADD CONSTRAINT order_items_product_id_fkey
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL;
+
+-- 8. Additional performance indexes
+CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_products_rating ON products(rating DESC);
+CREATE INDEX IF NOT EXISTS idx_products_review_count ON products(review_count DESC);
+CREATE INDEX IF NOT EXISTS idx_contact_messages_created_at ON contact_messages(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cart_items_product_id ON cart_items(product_id);
+CREATE INDEX IF NOT EXISTS idx_orders_payment_status ON orders(payment_status);
+CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);
+
+-- 9. Denormalized product_count on categories via trigger (fixed)
 CREATE OR REPLACE FUNCTION update_category_product_count()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -84,6 +121,12 @@ BEGIN
     UPDATE categories SET product_count = (SELECT COUNT(*) FROM products WHERE category_id = OLD.category_id)
     WHERE id = OLD.category_id;
     RETURN OLD;
+  ELSIF TG_OP = 'UPDATE' AND (OLD.category_id IS DISTINCT FROM NEW.category_id) THEN
+    UPDATE categories SET product_count = (SELECT COUNT(*) FROM products WHERE category_id = OLD.category_id)
+    WHERE id = OLD.category_id;
+    UPDATE categories SET product_count = (SELECT COUNT(*) FROM products WHERE category_id = NEW.category_id)
+    WHERE id = NEW.category_id;
+    RETURN NEW;
   ELSE
     UPDATE categories SET product_count = (SELECT COUNT(*) FROM products WHERE category_id = NEW.category_id)
     WHERE id = NEW.category_id;
