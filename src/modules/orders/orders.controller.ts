@@ -13,31 +13,38 @@ import { AuthGuard } from '../../common/guards/auth.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import type { JwtUser } from '../../common/decorators/current-user.decorator.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
+import { UuidParamPipe } from '../../common/pipes/uuid-param.pipe.js';
 import {
   CreateOrderSchema,
+  CheckoutOrderSchema,
   type CreateOrderDto,
+  type CheckoutOrderDto,
 } from './dto/create-order.dto.js';
 
 @ApiTags('Orders')
 @Controller('orders')
-@UseGuards(AuthGuard)
-@ApiBearerAuth()
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Get()
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user order history' })
   async findAll(@CurrentUser() user: JwtUser) {
     return this.ordersService.findByUser(user.id);
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get order detail' })
-  async findOne(@CurrentUser() user: JwtUser, @Param('id') id: string) {
+  async findOne(@CurrentUser() user: JwtUser, @Param('id', UuidParamPipe) id: string) {
     return this.ordersService.findById(id, user.id);
   }
 
   @Post()
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create order from cart' })
   async create(
     @CurrentUser() user: JwtUser,
@@ -46,9 +53,17 @@ export class OrdersController {
     return this.ordersService.create(user.id, dto);
   }
 
+  @Post('checkout')
+  @ApiOperation({ summary: 'Checkout with items from client cart (public)' })
+  async checkout(
+    @Body(new ZodValidationPipe(CheckoutOrderSchema)) dto: CheckoutOrderDto,
+  ) {
+    return this.ordersService.checkout(dto);
+  }
+
   @Patch(':id/cancel')
   @ApiOperation({ summary: 'Cancel a pending order' })
-  async cancel(@CurrentUser() user: JwtUser, @Param('id') id: string) {
+  async cancel(@CurrentUser() user: JwtUser, @Param('id', UuidParamPipe) id: string) {
     return this.ordersService.cancelOrder(id, user.id);
   }
 }
