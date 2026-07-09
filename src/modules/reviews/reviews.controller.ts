@@ -14,6 +14,7 @@ import { AuthGuard } from '../../common/guards/auth.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import type { JwtUser } from '../../common/decorators/current-user.decorator.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
+import { UuidParamPipe } from '../../common/pipes/uuid-param.pipe.js';
 import {
   CreateReviewSchema,
   UpdateReviewSchema,
@@ -28,7 +29,7 @@ export class ReviewsController {
 
   @Get('products/:productId/reviews')
   @ApiOperation({ summary: 'Get reviews for a product' })
-  async findByProduct(@Param('productId') productId: string) {
+  async findByProduct(@Param('productId', UuidParamPipe) productId: string) {
     return this.reviewsService.findByProduct(productId);
   }
 
@@ -38,7 +39,7 @@ export class ReviewsController {
   @ApiOperation({ summary: 'Add a review to a product' })
   async create(
     @CurrentUser() user: JwtUser,
-    @Param('productId') productId: string,
+    @Param('productId', UuidParamPipe) productId: string,
     @Body(new ZodValidationPipe(CreateReviewSchema)) dto: CreateReviewDto,
   ) {
     return this.reviewsService.create(user.id, productId, dto);
@@ -50,7 +51,7 @@ export class ReviewsController {
   @ApiOperation({ summary: 'Update own review' })
   async update(
     @CurrentUser() user: JwtUser,
-    @Param('id') id: string,
+    @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(UpdateReviewSchema)) dto: UpdateReviewDto,
   ) {
     return this.reviewsService.update(id, user.id, dto);
@@ -60,7 +61,7 @@ export class ReviewsController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete own review' })
-  async remove(@CurrentUser() user: JwtUser, @Param('id') id: string) {
+  async remove(@CurrentUser() user: JwtUser, @Param('id', UuidParamPipe) id: string) {
     return this.reviewsService.remove(id, user.id);
   }
 }

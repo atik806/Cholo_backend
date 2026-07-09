@@ -13,6 +13,7 @@ import { AuthGuard } from '../../common/guards/auth.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import type { JwtUser } from '../../common/decorators/current-user.decorator.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
+import { UuidParamPipe } from '../../common/pipes/uuid-param.pipe.js';
 import { AddWishlistSchema, type AddWishlistDto } from './dto/wishlist.dto.js';
 
 @ApiTags('Wishlist')
@@ -41,7 +42,7 @@ export class WishlistController {
   @ApiOperation({ summary: 'Remove product from wishlist' })
   async removeItem(
     @CurrentUser() user: JwtUser,
-    @Param('productId') productId: string,
+    @Param('productId', UuidParamPipe) productId: string,
   ) {
     return this.wishlistService.removeItem(user.id, productId);
   }
@@ -50,7 +51,7 @@ export class WishlistController {
   @ApiOperation({ summary: 'Check if product is in wishlist' })
   async checkItem(
     @CurrentUser() user: JwtUser,
-    @Param('productId') productId: string,
+    @Param('productId', UuidParamPipe) productId: string,
   ) {
     return this.wishlistService.checkItem(user.id, productId);
   }

@@ -14,6 +14,7 @@ import { AuthGuard } from '../../common/guards/auth.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import type { JwtUser } from '../../common/decorators/current-user.decorator.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
+import { UuidParamPipe } from '../../common/pipes/uuid-param.pipe.js';
 import {
   AddCartItemSchema,
   UpdateCartItemSchema,
@@ -53,7 +54,7 @@ export class CartController {
   @ApiOperation({ summary: 'Update cart item quantity or variant' })
   async updateItem(
     @CurrentUser() user: JwtUser,
-    @Param('itemId') itemId: string,
+    @Param('itemId', UuidParamPipe) itemId: string,
     @Body(new ZodValidationPipe(UpdateCartItemSchema)) dto: UpdateCartItemDto,
   ) {
     return this.cartService.updateItem(itemId, user.id, dto);
@@ -63,7 +64,7 @@ export class CartController {
   @ApiOperation({ summary: 'Remove item from cart' })
   async removeItem(
     @CurrentUser() user: JwtUser,
-    @Param('itemId') itemId: string,
+    @Param('itemId', UuidParamPipe) itemId: string,
   ) {
     return this.cartService.removeItem(itemId, user.id);
   }

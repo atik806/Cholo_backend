@@ -14,6 +14,7 @@ import { AuthGuard } from '../../common/guards/auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
+import { UuidParamPipe } from '../../common/pipes/uuid-param.pipe.js';
 import {
   CreateCategorySchema,
   type CreateCategoryDto,
@@ -57,7 +58,7 @@ export class CategoriesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a category (Admin only)' })
   async update(
-    @Param('id') id: string,
+    @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(UpdateCategorySchema)) dto: UpdateCategoryDto,
   ) {
     return this.categoriesService.update(id, dto);
@@ -68,7 +69,7 @@ export class CategoriesController {
   @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a category (Admin only)' })
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id', UuidParamPipe) id: string) {
     return this.categoriesService.remove(id);
   }
 }

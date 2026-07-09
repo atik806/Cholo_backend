@@ -15,6 +15,7 @@ import { AuthGuard } from '../../common/guards/auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
+import { UuidParamPipe } from '../../common/pipes/uuid-param.pipe.js';
 import {
   CreateProductSchema,
   type CreateProductDto,
@@ -79,7 +80,7 @@ export class ProductsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a product (Admin only)' })
   async update(
-    @Param('id') id: string,
+    @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(UpdateProductSchema)) dto: UpdateProductDto,
   ) {
     return this.productsService.update(id, dto);
@@ -90,7 +91,7 @@ export class ProductsController {
   @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a product (Admin only)' })
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id', UuidParamPipe) id: string) {
     return this.productsService.remove(id);
   }
 }
