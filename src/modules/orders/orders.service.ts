@@ -4,7 +4,7 @@ import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import type { CreateOrderDto } from './dto/create-order.dto.js';
+import type { CreateOrderDto, CheckoutOrderDto } from './dto/create-order.dto.js';
 import { createSupabaseAdminClient } from '../../config/supabase.config.js';
 
 @Injectable()
@@ -91,6 +91,75 @@ export class OrdersService {
     }
 
     await this.supabase.from('cart_items').delete().eq('user_id', userId);
+    return this.findById(order.id, userId);
+  }
+
+  private async getAdminUserId(): Promise<string> {
+    const { data } = await this.supabase
+      .from('profiles')
+      .select('id')
+      .eq('role', 'admin')
+      .limit(1)
+      .single();
+    if (!data) {
+      const { data: fallback } = await this.supabase
+        .from('profiles')
+        .select('id')
+        .limit(1)
+        .single();
+      if (!fallback) throw new InternalServerErrorException('No user profile found');
+      return fallback.id;
+    }
+    return data.id;
+  }
+
+  async checkout(dto: CheckoutOrderDto) {
+    const userId = await this.getAdminUserId();
+    const subtotal = dto.items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0,
+    );
+    const shippingCost = subtotal >= 50 ? 0 : 5;
+    const tax = subtotal * 0.08;
+    const total = subtotal + shippingCost + tax;
+
+    const { data: order, error: orderError } = await this.supabase
+      .from('orders')
+      .insert({
+        user_id: userId,
+        status: 'pending',
+        subtotal: Math.round(subtotal * 100) / 100,
+        shipping_cost: shippingCost,
+        tax: Math.round(tax * 100) / 100,
+        total: Math.round(total * 100) / 100,
+        shipping_address: dto.shipping_address,
+        payment_method: dto.payment_method,
+        payment_status: 'pending',
+      })
+      .select()
+      .single();
+
+    if (orderError) throw new InternalServerErrorException(orderError.message);
+
+    const orderItems = dto.items.map((item) => ({
+      order_id: order.id,
+      product_id: item.product_id,
+      product_name: item.product_name,
+      product_image: item.product_image || null,
+      price: item.price,
+      quantity: item.quantity,
+      selected_size: item.selected_size || null,
+      selected_color: item.selected_color || null,
+    }));
+
+    const { error: itemsError } = await this.supabase
+      .from('order_items')
+      .insert(orderItems);
+    if (itemsError) {
+      await this.supabase.from('orders').delete().eq('id', order.id);
+      throw new InternalServerErrorException('Failed to create order items');
+    }
+
     return this.findById(order.id, userId);
   }
 
