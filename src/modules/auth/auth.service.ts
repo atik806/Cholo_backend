@@ -113,7 +113,7 @@ export class AuthService {
       refresh_token: refreshToken,
     });
 
-    if (error || !data.session) {
+    if (error || !data.session || !data.user) {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
@@ -128,8 +128,8 @@ export class AuthService {
     return {
       user: {
         id: user.id,
-        email: user.email,
-        name: profile?.name || user.email,
+        email: user.email ?? '',
+        name: profile?.name ?? user.email ?? '',
         role: profile?.role || 'customer',
       },
       session: {
