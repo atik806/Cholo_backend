@@ -309,6 +309,16 @@ export class AdminService {
     return data;
   }
 
+  async deleteContactMessage(id: string) {
+    const { error } = await this.supabase
+      .from('contact_messages')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw new InternalServerErrorException(error.message);
+    return { message: 'Message deleted successfully' };
+  }
+
   private async updateProductRating(productId: string) {
     const { data: stats } = await this.supabase
       .from('reviews')

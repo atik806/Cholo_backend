@@ -16,6 +16,7 @@ import { AuthGuard } from '../../common/guards/auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
+import { UuidParamPipe } from '../../common/pipes/uuid-param.pipe.js';
 
 const UpdateStatusSchema = z.object({
   status: z.enum(['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']),
@@ -82,7 +83,7 @@ export class AdminController {
   @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get order detail' })
-  async getOrderDetail(@Param('id') id: string) {
+  async getOrderDetail(@Param('id', UuidParamPipe) id: string) {
     return this.adminService.getOrderDetail(id);
   }
 
@@ -92,7 +93,7 @@ export class AdminController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update order status' })
   async updateOrderStatus(
-    @Param('id') id: string,
+    @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(UpdateStatusSchema))
     body: { status: string },
   ) {
@@ -105,7 +106,7 @@ export class AdminController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update payment status' })
   async updatePaymentStatus(
-    @Param('id') id: string,
+    @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(UpdatePaymentStatusSchema))
     body: { payment_status: string },
   ) {
@@ -139,7 +140,7 @@ export class AdminController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user role' })
   async updateUserRole(
-    @Param('id') id: string,
+    @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(UpdateRoleSchema))
     body: { role: string },
   ) {
@@ -151,7 +152,7 @@ export class AdminController {
   @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete user' })
-  async deleteUser(@Param('id') id: string) {
+  async deleteUser(@Param('id', UuidParamPipe) id: string) {
     return this.adminService.deleteUser(id);
   }
 
@@ -175,7 +176,7 @@ export class AdminController {
   @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a review' })
-  async deleteReview(@Param('id') id: string) {
+  async deleteReview(@Param('id', UuidParamPipe) id: string) {
     return this.adminService.deleteReview(id);
   }
 
@@ -199,7 +200,16 @@ export class AdminController {
   @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Mark contact message as read' })
-  async markContactMessageRead(@Param('id') id: string) {
+  async markContactMessageRead(@Param('id', UuidParamPipe) id: string) {
     return this.adminService.markContactMessageRead(id);
+  }
+
+  @Delete('contact-messages/:id')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a contact message' })
+  async deleteContactMessage(@Param('id', UuidParamPipe) id: string) {
+    return this.adminService.deleteContactMessage(id);
   }
 }
