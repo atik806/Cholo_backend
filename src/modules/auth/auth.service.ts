@@ -24,9 +24,10 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     const { data: authData, error: authError } =
-      await this.supabase.auth.signUp({
+      await this.supabaseAdmin.auth.admin.createUser({
         email: dto.email,
         password: dto.password,
+        email_confirm: true,
       });
 
     if (authError) {
@@ -64,6 +65,26 @@ export class AuthService {
       throw new InternalServerErrorException(`Failed to create profile: ${profileError.message}`);
     }
 
+    const { data: sessionData, error: signInError } =
+      await this.supabaseAdmin.auth.signInWithPassword({
+        email: dto.email,
+        password: dto.password,
+      });
+
+    if (signInError) {
+      this.logger.error(`Failed to sign in after registration: ${signInError.message}`);
+      return {
+        user: {
+          id: userId,
+          email: dto.email,
+          name: dto.name,
+          role: 'customer',
+        },
+        session: null,
+        message: 'Registration successful. Please sign in.',
+      };
+    }
+
     return {
       user: {
         id: userId,
@@ -71,15 +92,14 @@ export class AuthService {
         name: dto.name,
         role: 'customer',
       },
-      session: authData.session
+      session: sessionData.session
         ? {
-            access_token: authData.session.access_token,
-            refresh_token: authData.session.refresh_token,
-            expires_at: authData.session.expires_at,
+            access_token: sessionData.session.access_token,
+            refresh_token: sessionData.session.refresh_token,
+            expires_at: sessionData.session.expires_at,
           }
         : null,
-      message:
-        'Registration successful. Please check your email to confirm your account.',
+      message: 'Registration successful',
     };
   }
 
@@ -151,7 +171,7 @@ export class AuthService {
   async getProfile(userId: string) {
     const { data: profile, error } = await this.supabaseAdmin
       .from('profiles')
-      .select('id, name, email, avatar_url, role')
+      .select('id, name, email, phone, avatar_url, shipping_address, role')
       .eq('id', userId)
       .single();
 
@@ -174,7 +194,8 @@ export class AuthService {
       .single();
 
     if (error) {
-      throw new InternalServerErrorException('Failed to update profile');
+      this.logger.error(`Failed to update profile: ${error.message} (${error.code})`);
+      throw new InternalServerErrorException(`Failed to update profile: ${error.message}`);
     }
 
     return data;
