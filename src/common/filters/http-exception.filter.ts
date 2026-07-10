@@ -31,6 +31,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message = (obj.message as string) || exception.message;
         errors = obj.errors;
       }
+
+      if (status >= 500) {
+        this.logger.error(`HTTP ${status}: ${message}`, exception.stack);
+      }
     } else if (exception instanceof Error) {
       this.logger.error(
         `Unhandled exception: ${exception.message}`,
@@ -38,8 +42,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
       );
     }
 
+    const isProd = process.env.NODE_ENV === 'production';
     const sanitized =
-      status === HttpStatus.INTERNAL_SERVER_ERROR
+      status === HttpStatus.INTERNAL_SERVER_ERROR && isProd
         ? 'Internal server error'
         : message;
 

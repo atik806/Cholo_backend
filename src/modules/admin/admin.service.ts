@@ -3,11 +3,13 @@ import {
   NotFoundException,
   BadRequestException,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { createSupabaseAdminClient } from '../../config/supabase.config.js';
 
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
   private supabase = createSupabaseAdminClient();
 
   async getDashboardStats() {
@@ -189,6 +191,7 @@ export class AdminService {
       });
 
     if (createError) {
+      this.logger.error(`Failed to create auth user: ${createError.message}`);
       throw new InternalServerErrorException(
         'Failed to create user: ' + createError.message,
       );
@@ -196,26 +199,28 @@ export class AdminService {
 
     const userId = authData.user!.id;
 
-    const { error: profileError } = await this.supabase.from('profiles').insert({
-      id: userId,
-      email: dto.email,
-      name: dto.name,
-      role: dto.role,
-    });
+    const { data: profile, error: profileError } = await this.supabase
+      .from('profiles')
+      .insert({
+        id: userId,
+        email: dto.email,
+        name: dto.name,
+        role: dto.role,
+      })
+      .select('id, name, email, role, created_at')
+      .single();
 
     if (profileError) {
+      this.logger.error(`Failed to create profile: ${profileError.message}`);
       await this.supabase.auth.admin.deleteUser(userId);
       throw new InternalServerErrorException(
         'Failed to create profile: ' + profileError.message,
       );
     }
 
-    return {
-      id: userId,
-      email: dto.email,
-      name: dto.name,
-      role: dto.role,
-    };
+    this.logger.log(`User created successfully: ${dto.email} (${dto.role})`);
+
+    return profile;
   }
 
   async updateUserRole(userId: string, role: string) {
@@ -240,7 +245,10 @@ export class AdminService {
       await this.supabase.auth.admin.deleteUser(userId);
     if (authError) throw new InternalServerErrorException(authError.message);
 
-    await this.supabase.from('profiles').delete().eq('id', userId);
+    const { error: profileError } = await this.supabase.from('profiles').delete().eq('id', userId);
+    if (profileError) {
+      this.logger.error(`Failed to delete profile for user ${userId}: ${profileError.message}`);
+    }
 
     return { message: 'User deleted successfully' };
   }
