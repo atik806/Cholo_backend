@@ -9,7 +9,7 @@ export class WishlistService {
   async findByUser(userId: string) {
     const { data, error } = await this.supabase
       .from('wishlists')
-      .select('*, products(*)')
+      .select('id, user_id, product_id, created_at, products(id, name, slug, price, images, category, stock, original_price, rating, review_count, is_new)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 

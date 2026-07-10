@@ -4,6 +4,7 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import compression from 'compression';
 import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
@@ -29,6 +30,7 @@ async function bootstrap() {
   });
 
   app.use(helmet());
+  app.use(compression());
 
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalInterceptors(new TransformInterceptor());

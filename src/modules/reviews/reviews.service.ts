@@ -14,15 +14,25 @@ import { createSupabaseAdminClient } from '../../config/supabase.config.js';
 export class ReviewsService {
   private supabase = createSupabaseAdminClient();
 
-  async findByProduct(productId: string) {
-    const { data, error } = await this.supabase
+  async findByProduct(productId: string, page = 1, limit = 20) {
+    const from = (page - 1) * limit;
+    const { data, error, count } = await this.supabase
       .from('reviews')
-      .select('*, profiles(name, avatar_url)')
+      .select('*, profiles(name, avatar_url)', { count: 'exact' })
       .eq('product_id', productId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(from, from + limit - 1);
 
     if (error) throw new InternalServerErrorException(error.message);
-    return data || [];
+    return {
+      data: data || [],
+      meta: {
+        total: count || 0,
+        page,
+        limit,
+        totalPages: Math.ceil((count || 0) / limit),
+      },
+    };
   }
 
   async create(userId: string, productId: string, dto: CreateReviewDto) {
@@ -48,7 +58,6 @@ export class ReviewsService {
       .single();
 
     if (error) throw new InternalServerErrorException(error.message);
-    await this.updateProductRating(productId);
     return data;
   }
 
@@ -71,7 +80,6 @@ export class ReviewsService {
       .single();
 
     if (error) throw new InternalServerErrorException(error.message);
-    await this.updateProductRating(review.product_id);
     return data;
   }
 
@@ -91,32 +99,6 @@ export class ReviewsService {
       .delete()
       .eq('id', reviewId);
     if (error) throw new InternalServerErrorException(error.message);
-    await this.updateProductRating(review.product_id);
     return { message: 'Review deleted successfully' };
-  }
-
-  private async updateProductRating(productId: string) {
-    const { data: stats } = await this.supabase
-      .from('reviews')
-      .select('rating')
-      .eq('product_id', productId);
-
-    if (!stats || stats.length === 0) {
-      await this.supabase
-        .from('products')
-        .update({ rating: 0, review_count: 0 })
-        .eq('id', productId);
-      return;
-    }
-
-    const avgRating =
-      stats.reduce((sum, r) => sum + r.rating, 0) / stats.length;
-    await this.supabase
-      .from('products')
-      .update({
-        rating: Math.round(avgRating * 10) / 10,
-        review_count: stats.length,
-      })
-      .eq('id', productId);
   }
 }

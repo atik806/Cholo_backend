@@ -29,6 +29,8 @@
     "@nestjs/swagger": "^11.4.5",
     "@nestjs/throttler": "^6.5.0",
     "@supabase/supabase-js": "^2.110.1",
+    "@types/compression": "^1.8.1",
+    "compression": "^1.8.1",
     "dotenv": "^17.4.2",
     "helmet": "^8.2.0",
     "reflect-metadata": "^0.2.2",

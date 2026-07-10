@@ -14,7 +14,7 @@ export class CartService {
   async findByUser(userId: string) {
     const { data, error } = await this.supabase
       .from('cart_items')
-      .select('*, products(*)')
+      .select('id, user_id, product_id, quantity, selected_size, selected_color, created_at, products(id, name, slug, price, images, category, stock, original_price)')
       .eq('user_id', userId)
       .order('created_at', { ascending: true });
 
@@ -116,7 +116,7 @@ export class CartService {
     const items = await this.findByUser(userId);
 
     const subtotal = items.reduce(
-      (sum, item) => sum + (item.products?.price || 0) * item.quantity,
+      (sum, item) => sum + ((item.products as any)?.price || 0) * item.quantity,
       0,
     );
     const shippingCost = subtotal >= 50 ? 0 : 5;

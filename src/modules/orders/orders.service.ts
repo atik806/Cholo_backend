@@ -11,15 +11,25 @@ import { createSupabaseAdminClient } from '../../config/supabase.config.js';
 export class OrdersService {
   private supabase = createSupabaseAdminClient();
 
-  async findByUser(userId: string) {
-    const { data, error } = await this.supabase
+  async findByUser(userId: string, page = 1, limit = 10) {
+    const from = (page - 1) * limit;
+    const { data, error, count } = await this.supabase
       .from('orders')
-      .select('*, order_items(*)')
+      .select('*, order_items(*)', { count: 'exact' })
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(from, from + limit - 1);
 
     if (error) throw new InternalServerErrorException(error.message);
-    return data || [];
+    return {
+      data: data || [],
+      meta: {
+        total: count || 0,
+        page,
+        limit,
+        totalPages: Math.ceil((count || 0) / limit),
+      },
+    };
   }
 
   async findById(id: string, userId: string) {
@@ -46,7 +56,7 @@ export class OrdersService {
     }
 
     const subtotal = cartItems.reduce(
-      (sum, item) => sum + (item.products?.price || 0) * item.quantity,
+      (sum, item) => sum + ((item.products as any)?.price || 0) * item.quantity,
       0,
     );
     const shippingCost = subtotal >= 50 ? 0 : 5;
@@ -74,9 +84,9 @@ export class OrdersService {
     const orderItems = cartItems.map((item) => ({
       order_id: order.id,
       product_id: item.product_id,
-      product_name: item.products?.name || '',
-      product_image: item.products?.images?.[0] || null,
-      price: item.products?.price || 0,
+      product_name: (item.products as any)?.name || '',
+      product_image: (item.products as any)?.images?.[0] || null,
+      price: (item.products as any)?.price || 0,
       quantity: item.quantity,
       selected_size: item.selected_size,
       selected_color: item.selected_color,

@@ -118,8 +118,8 @@ export class AdminController {
   @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all users' })
-  async findAllUsers() {
-    return this.adminService.findAllUsers();
+  async findAllUsers(@Query() query: { page?: number; limit?: number; search?: string }) {
+    return this.adminService.findAllUsers(query);
   }
 
   @Post('users')

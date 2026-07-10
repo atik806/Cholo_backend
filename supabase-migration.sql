@@ -112,6 +112,10 @@ CREATE INDEX IF NOT EXISTS idx_contact_messages_created_at ON contact_messages(c
 CREATE INDEX IF NOT EXISTS idx_cart_items_product_id ON cart_items(product_id);
 CREATE INDEX IF NOT EXISTS idx_orders_payment_status ON orders(payment_status);
 CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);
+CREATE INDEX IF NOT EXISTS idx_products_price ON products(price);
+CREATE INDEX IF NOT EXISTS idx_products_stock ON products(stock);
+CREATE INDEX IF NOT EXISTS idx_products_is_featured ON products(is_featured);
+CREATE INDEX IF NOT EXISTS idx_contact_messages_is_read ON contact_messages(is_read);
 
 -- 9. Denormalized product_count on categories via trigger (fixed)
 CREATE OR REPLACE FUNCTION update_category_product_count()
