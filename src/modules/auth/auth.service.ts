@@ -3,6 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { RegisterDto } from './dto/register.dto.js';
@@ -15,6 +16,7 @@ import {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private supabase = createSupabaseClient();
   private supabaseAdmin = createSupabaseAdminClient();
 
@@ -174,83 +176,58 @@ export class AuthService {
 
   async adminLogin(dto: LoginDto) {
     const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
-    const adminPassword = this.configService.get<string>('ADMIN_PASSWORD');
-
-    if (dto.email !== adminEmail || dto.password !== adminPassword) {
-      throw new UnauthorizedException('Invalid admin credentials');
-    }
-
-    const { data: existingProfile } = await this.supabaseAdmin
-      .from('profiles')
-      .select('id')
-      .eq('email', dto.email)
-      .maybeSingle();
-
-    if (existingProfile) {
-      await this.supabaseAdmin.auth.admin.updateUserById(existingProfile.id, {
-        password: dto.password,
-        email_confirm: true,
-      });
-    } else {
-      const { data: createData, error: createError } =
-        await this.supabaseAdmin.auth.admin.createUser({
-          email: dto.email,
-          password: dto.password,
-          email_confirm: true,
-        });
-
-      if (createError) {
-        throw new InternalServerErrorException(
-          'Failed to create admin user: ' + createError.message,
-        );
-      }
-
-      await this.supabaseAdmin.from('profiles').insert({
-        id: createData.user!.id,
-        email: dto.email,
-        name: 'Admin',
-        role: 'admin',
-      });
-    }
 
     const { data: signInData, error: signInError } =
-      await this.supabase.auth.signInWithPassword({
+      await this.supabaseAdmin.auth.signInWithPassword({
         email: dto.email,
         password: dto.password,
       });
 
     if (signInError || !signInData?.session) {
-      throw new InternalServerErrorException(
-        'Failed to sign in: ' + (signInError?.message || ''),
-      );
+      throw new UnauthorizedException('Invalid email or password');
     }
 
     const userId = signInData.user.id;
 
-    await this.supabaseAdmin
+    const { data: profile } = await this.supabaseAdmin
       .from('profiles')
-      .upsert(
-        {
-          id: userId,
-          email: dto.email,
-          name: 'Admin',
-          role: 'admin',
-        },
-        { onConflict: 'id' },
-      );
+      .select('id, name, email, role')
+      .eq('id', userId)
+      .maybeSingle();
 
-    return {
-      user: {
-        id: userId,
-        email: dto.email,
-        name: 'Admin',
-        role: 'admin',
-      },
-      session: {
-        access_token: signInData.session.access_token,
-        refresh_token: signInData.session.refresh_token,
-        expires_at: signInData.session.expires_at,
-      },
-    };
+    if (profile?.role === 'admin') {
+      return {
+        user: { id: userId, email: dto.email, name: profile.name || 'Admin', role: 'admin' as const },
+        session: {
+          access_token: signInData.session.access_token,
+          refresh_token: signInData.session.refresh_token,
+          expires_at: signInData.session.expires_at,
+        },
+      };
+    }
+
+    if (dto.email === adminEmail) {
+      const { error: upsertError } = await this.supabaseAdmin
+        .from('profiles')
+        .upsert(
+          { id: userId, email: dto.email, name: profile?.name || 'Admin', role: 'admin' },
+          { onConflict: 'id' },
+        );
+
+      if (upsertError) {
+        this.logger.error(`Failed to create admin profile: ${upsertError.message}`);
+      }
+
+      return {
+        user: { id: userId, email: dto.email, name: profile?.name || 'Admin', role: 'admin' as const },
+        session: {
+          access_token: signInData.session.access_token,
+          refresh_token: signInData.session.refresh_token,
+          expires_at: signInData.session.expires_at,
+        },
+      };
+    }
+
+    throw new UnauthorizedException('You do not have admin access');
   }
 }

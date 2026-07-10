@@ -36,7 +36,7 @@ export class AuthController {
   }
 
   @Post('admin-login')
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'Admin login with credentials from .env' })
   async adminLogin(@Body(new ZodValidationPipe(LoginSchema)) dto: LoginDto) {
     return this.authService.adminLogin(dto);
