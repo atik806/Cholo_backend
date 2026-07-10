@@ -8,6 +8,7 @@ CREATE TABLE profiles (
   email TEXT NOT NULL UNIQUE,
   phone TEXT,
   avatar_url TEXT,
+  shipping_address JSONB,
   role TEXT DEFAULT 'customer' CHECK (role IN ('customer', 'admin')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
