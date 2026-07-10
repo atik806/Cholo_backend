@@ -163,6 +163,9 @@ CREATE POLICY "Users can view own profile" ON profiles
 CREATE POLICY "Users can update own profile" ON profiles
   FOR UPDATE USING (auth.uid() = id);
 
+CREATE POLICY "Users can insert own profile" ON profiles
+  FOR INSERT WITH CHECK (auth.uid() = id);
+
 -- Cart: users can only access their own
 CREATE POLICY "Users can view own cart" ON cart_items
   FOR SELECT USING (auth.uid() = user_id);

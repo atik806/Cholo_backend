@@ -46,16 +46,17 @@ export class AuthService {
 
     const { error: profileError } = await this.supabaseAdmin
       .from('profiles')
-      .insert({
+      .upsert({
         id: userId,
         name: dto.name,
         email: dto.email,
         role: 'customer',
-      });
+      }, { onConflict: 'id' });
 
     if (profileError) {
+      this.logger.error(`Failed to create profile: ${profileError.message} (${profileError.code})`);
       await this.supabaseAdmin.auth.admin.deleteUser(userId);
-      throw new InternalServerErrorException('Failed to create profile');
+      throw new InternalServerErrorException(`Failed to create profile: ${profileError.message}`);
     }
 
     return {
