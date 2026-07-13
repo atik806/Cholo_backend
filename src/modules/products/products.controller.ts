@@ -16,6 +16,7 @@ import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import { UuidParamPipe } from '../../common/pipes/uuid-param.pipe.js';
+import { CacheTTL } from '../../common/decorators/cache.decorator.js';
 import {
   CreateProductSchema,
   type CreateProductDto,
@@ -35,6 +36,7 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Get()
+  @CacheTTL(300)
   @ApiOperation({
     summary: 'List products with search, filter, pagination, and sort',
   })
@@ -45,18 +47,21 @@ export class ProductsController {
   }
 
   @Get('featured')
+  @CacheTTL(600)
   @ApiOperation({ summary: 'Get featured products' })
   async getFeatured() {
     return this.productsService.getFeatured();
   }
 
   @Get(':slug')
+  @CacheTTL(300)
   @ApiOperation({ summary: 'Get product by slug' })
   async findBySlug(@Param('slug') slug: string) {
     return this.productsService.findBySlug(slug);
   }
 
   @Get(':slug/related')
+  @CacheTTL(300)
   @ApiOperation({ summary: 'Get related products' })
   async getRelated(@Param('slug') slug: string) {
     const product = await this.productsService.findBySlug(slug);

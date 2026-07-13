@@ -15,6 +15,7 @@ import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import { UuidParamPipe } from '../../common/pipes/uuid-param.pipe.js';
+import { CacheTTL } from '../../common/decorators/cache.decorator.js';
 import {
   CreateCategorySchema,
   type CreateCategoryDto,
@@ -30,12 +31,14 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Get()
+  @CacheTTL(600)
   @ApiOperation({ summary: 'Get all categories' })
   async findAll() {
     return this.categoriesService.findAll();
   }
 
   @Get(':slug')
+  @CacheTTL(600)
   @ApiOperation({ summary: 'Get category by slug' })
   async findBySlug(@Param('slug') slug: string) {
     return this.categoriesService.findBySlug(slug);
