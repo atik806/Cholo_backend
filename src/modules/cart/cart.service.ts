@@ -18,7 +18,7 @@ export class CartService {
       .eq('user_id', userId)
       .order('created_at', { ascending: true });
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     return data || [];
   }
 
@@ -54,7 +54,7 @@ export class CartService {
         .select()
         .single();
 
-      if (error) throw new InternalServerErrorException(error.message);
+      if (error) throw new InternalServerErrorException('An internal error occurred');
       return data;
     }
 
@@ -70,7 +70,7 @@ export class CartService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     return data;
   }
 
@@ -108,7 +108,7 @@ export class CartService {
       .delete()
       .eq('user_id', userId);
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     return { message: 'Cart cleared successfully' };
   }
 

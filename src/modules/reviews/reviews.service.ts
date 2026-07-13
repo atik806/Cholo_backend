@@ -23,7 +23,7 @@ export class ReviewsService {
       .order('created_at', { ascending: false })
       .range(from, from + limit - 1);
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     return {
       data: data || [],
       meta: {
@@ -57,7 +57,7 @@ export class ReviewsService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     return data;
   }
 
@@ -79,7 +79,7 @@ export class ReviewsService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     return data;
   }
 
@@ -98,7 +98,7 @@ export class ReviewsService {
       .from('reviews')
       .delete()
       .eq('id', reviewId);
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     return { message: 'Review deleted successfully' };
   }
 }

@@ -13,7 +13,7 @@ export class WishlistService {
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     return data || [];
   }
 
@@ -33,7 +33,7 @@ export class WishlistService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     return data;
   }
 
@@ -44,7 +44,7 @@ export class WishlistService {
       .eq('user_id', userId)
       .eq('product_id', productId);
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     return { message: 'Removed from wishlist' };
   }
 
@@ -56,7 +56,7 @@ export class WishlistService {
       .eq('product_id', productId)
       .maybeSingle();
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     return { isInWishlist: !!data };
   }
 }
