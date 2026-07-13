@@ -33,9 +33,10 @@ export class ProductsService {
     }
 
     if (search) {
-      const searchTerm = `%${search}%`;
+      const sanitized = search.replace(/[(),\.]/g, '').slice(0, 200);
+      const searchTerm = `%${sanitized}%`;
       dbQuery = dbQuery.or(
-        `name.ilike.${searchTerm},description.ilike.${searchTerm},tags.cs.{${search}}`,
+        `name.ilike.${searchTerm},description.ilike.${searchTerm},tags.cs.{${sanitized}}`,
       );
     }
 
@@ -70,7 +71,7 @@ export class ProductsService {
 
     const { data, error, count } = await dbQuery;
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
 
     return {
       data: data || [],
@@ -106,7 +107,7 @@ export class ProductsService {
       .order('rating', { ascending: false })
       .limit(8);
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     return data || [];
   }
 
@@ -119,7 +120,7 @@ export class ProductsService {
       .order('rating', { ascending: false })
       .limit(limit);
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     return data || [];
   }
 
@@ -135,7 +136,7 @@ export class ProductsService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
 
     const { count } = await this.supabase
       .from('products')

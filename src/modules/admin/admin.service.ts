@@ -77,7 +77,7 @@ export class AdminService {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
 
     return {
       data: data || [],
@@ -120,7 +120,7 @@ export class AdminService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     if (!data) throw new NotFoundException('Order not found');
     return data;
   }
@@ -138,7 +138,7 @@ export class AdminService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     if (!data) throw new NotFoundException('Order not found');
     return data;
   }
@@ -153,14 +153,15 @@ export class AdminService {
       .select('id, name, email, role, created_at', { count: 'exact' });
 
     if (query.search) {
-      sb = sb.or(`name.ilike.%${query.search}%,email.ilike.%${query.search}%`);
+      const sanitized = query.search.replace(/[(),\.]/g, '').slice(0, 200);
+      sb = sb.or(`name.ilike.%${sanitized}%,email.ilike.%${sanitized}%`);
     }
 
     const { data, error, count } = await sb
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     return {
       data: data || [],
       meta: {
@@ -193,7 +194,7 @@ export class AdminService {
     if (createError) {
       this.logger.error(`Failed to create auth user: ${createError.message}`);
       throw new InternalServerErrorException(
-        'Failed to create user: ' + createError.message,
+        'Failed to create user',
       );
     }
 
@@ -214,7 +215,7 @@ export class AdminService {
       this.logger.error(`Failed to create profile: ${profileError.message}`);
       await this.supabase.auth.admin.deleteUser(userId);
       throw new InternalServerErrorException(
-        'Failed to create profile: ' + profileError.message,
+        'Failed to create profile',
       );
     }
 
@@ -235,7 +236,7 @@ export class AdminService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     if (!data) throw new NotFoundException('User not found');
     return data;
   }
@@ -266,7 +267,7 @@ export class AdminService {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
 
     return {
       data: data || [],
@@ -293,7 +294,7 @@ export class AdminService {
       .delete()
       .eq('id', reviewId);
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
 
     return { message: 'Review deleted successfully' };
   }
@@ -309,7 +310,7 @@ export class AdminService {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
 
     return {
       data: data || [],
@@ -330,7 +331,7 @@ export class AdminService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     if (!data) throw new NotFoundException('Message not found');
     return data;
   }
@@ -341,7 +342,7 @@ export class AdminService {
       .delete()
       .eq('id', id);
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     return { message: 'Message deleted successfully' };
   }
 }

@@ -20,10 +20,7 @@ export type CreateOrderDto = z.infer<typeof CreateOrderSchema>;
 
 const CheckoutItemSchema = z.object({
   product_id: z.string().uuid(),
-  product_name: z.string(),
-  product_image: z.string().nullable().optional(),
-  price: z.number(),
-  quantity: z.number().int().positive(),
+  quantity: z.number().int().min(1).max(999),
   selected_size: z.string().nullable().optional(),
   selected_color: z.string().nullable().optional(),
 });

@@ -33,8 +33,14 @@ const UpdateRoleSchema = z.object({
 const CreateUserSchema = z.object({
   name: z.string().min(1).max(100),
   email: z.string().email(),
-  password: z.string().min(6).max(100),
-  role: z.enum(['customer', 'admin']).default('admin'),
+  password: z
+    .string()
+    .min(8)
+    .max(100)
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number'),
+  role: z.enum(['customer', 'admin']).default('customer'),
 });
 
 const PaginationQuerySchema = z.object({

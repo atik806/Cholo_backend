@@ -1,6 +1,6 @@
 import { Controller, Post, Get, Patch, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { AuthService } from './auth.service.js';
 import { AuthGuard } from '../../common/guards/auth.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
@@ -35,8 +35,9 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  @SkipThrottle()
   @Post('admin-login')
-  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Admin login with credentials from .env' })
   async adminLogin(@Body(new ZodValidationPipe(LoginSchema)) dto: LoginDto) {
     return this.authService.adminLogin(dto);

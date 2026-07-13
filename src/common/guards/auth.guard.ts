@@ -34,11 +34,35 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Invalid or expired token');
     }
 
-    const { data: profile } = await this._supabaseAdmin
+    let { data: profile } = await this._supabaseAdmin
       .from('profiles')
       .select('name, role')
       .eq('id', user.id)
       .single();
+
+    if (!profile) {
+      const name =
+        (user.user_metadata?.full_name ??
+        user.user_metadata?.name ??
+        user.email ??
+        '').toString().slice(0, 100).replace(/[<>]/g, '');
+      const avatar_url = typeof user.user_metadata?.avatar_url === 'string'
+        ? user.user_metadata.avatar_url.slice(0, 500)
+        : null;
+
+      const { error: insertError } = await this._supabaseAdmin
+        .from('profiles')
+        .upsert(
+          { id: user.id, name, email: user.email ?? '', avatar_url, role: 'customer' },
+          { onConflict: 'id' },
+        );
+
+      if (insertError) {
+        this.logger.error(`Failed to create OAuth profile: ${insertError.message}`);
+      }
+
+      profile = { name, role: 'customer' };
+    }
 
     (
       request as Request & {

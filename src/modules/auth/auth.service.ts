@@ -5,7 +5,6 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import type { RegisterDto } from './dto/register.dto.js';
 import type { LoginDto } from './dto/login.dto.js';
 import type { UpdateProfileDto } from './dto/update-profile.dto.js';
@@ -19,8 +18,6 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private supabase = createSupabaseClient();
   private supabaseAdmin = createSupabaseAdminClient();
-
-  constructor(private configService: ConfigService) {}
 
   async register(dto: RegisterDto) {
     const { data: authData, error: authError } =
@@ -37,7 +34,7 @@ export class AuthService {
       ) {
         throw new ConflictException('Email already registered');
       }
-      throw new InternalServerErrorException(authError.message);
+      throw new InternalServerErrorException('Registration failed');
     }
 
     const userId = authData.user?.id;
@@ -62,7 +59,7 @@ export class AuthService {
     if (profileError) {
       this.logger.error(`Failed to create profile: ${profileError.message} (${profileError.code})`);
       await this.supabaseAdmin.auth.admin.deleteUser(userId);
-      throw new InternalServerErrorException(`Failed to create profile: ${profileError.message}`);
+      throw new InternalServerErrorException('Failed to create profile');
     }
 
     const { data: sessionData, error: signInError } =
@@ -190,20 +187,18 @@ export class AuthService {
       .from('profiles')
       .update(updates)
       .eq('id', userId)
-      .select()
+      .select('id, name, phone, avatar_url, shipping_address, role, updated_at')
       .single();
 
     if (error) {
       this.logger.error(`Failed to update profile: ${error.message} (${error.code})`);
-      throw new InternalServerErrorException(`Failed to update profile: ${error.message}`);
+      throw new InternalServerErrorException('Failed to update profile');
     }
 
     return data;
   }
 
   async adminLogin(dto: LoginDto) {
-    const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
-
     const { data: signInData, error: signInError } =
       await this.supabaseAdmin.auth.signInWithPassword({
         email: dto.email,
@@ -225,28 +220,6 @@ export class AuthService {
     if (profile?.role === 'admin') {
       return {
         user: { id: userId, email: dto.email, name: profile.name || 'Admin', role: 'admin' as const },
-        session: {
-          access_token: signInData.session.access_token,
-          refresh_token: signInData.session.refresh_token,
-          expires_at: signInData.session.expires_at,
-        },
-      };
-    }
-
-    if (dto.email === adminEmail) {
-      const { error: upsertError } = await this.supabaseAdmin
-        .from('profiles')
-        .upsert(
-          { id: userId, email: dto.email, name: profile?.name || 'Admin', role: 'admin' },
-          { onConflict: 'id' },
-        );
-
-      if (upsertError) {
-        this.logger.error(`Failed to create admin profile: ${upsertError.message}`);
-      }
-
-      return {
-        user: { id: userId, email: dto.email, name: profile?.name || 'Admin', role: 'admin' as const },
         session: {
           access_token: signInData.session.access_token,
           refresh_token: signInData.session.refresh_token,

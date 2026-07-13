@@ -44,7 +44,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const isProd = process.env.NODE_ENV === 'production';
     const sanitized =
-      status === HttpStatus.INTERNAL_SERVER_ERROR && isProd
+      status >= 500
         ? 'Internal server error'
         : message;
 

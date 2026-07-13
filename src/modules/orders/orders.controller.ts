@@ -65,6 +65,8 @@ export class OrdersController {
   }
 
   @Patch(':id/cancel')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Cancel a pending order' })
   async cancel(@CurrentUser() user: JwtUser, @Param('id', UuidParamPipe) id: string) {
     return this.ordersService.cancelOrder(id, user.id);

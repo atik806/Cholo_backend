@@ -20,7 +20,7 @@ export class OrdersService {
       .order('created_at', { ascending: false })
       .range(from, from + limit - 1);
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     return {
       data: data || [],
       meta: {
@@ -50,7 +50,7 @@ export class OrdersService {
       .select('*, products(*)')
       .eq('user_id', userId);
 
-    if (cartError) throw new InternalServerErrorException(cartError.message);
+    if (cartError) throw new InternalServerErrorException('Failed to verify products');
     if (!cartItems || cartItems.length === 0) {
       throw new BadRequestException('Cart is empty');
     }
@@ -124,10 +124,23 @@ export class OrdersService {
   }
 
   async checkout(userId: string, dto: CheckoutOrderDto) {
-    const subtotal = dto.items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0,
-    );
+    const productIds = dto.items.map((i) => i.product_id);
+    const { data: products, error: prodError } = await this.supabase
+      .from('products')
+      .select('id, name, price, images')
+      .in('id', productIds);
+
+    if (prodError) throw new InternalServerErrorException('Failed to verify products');
+    if (!products || products.length !== productIds.length) {
+      throw new BadRequestException('One or more products are invalid');
+    }
+
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    const subtotal = dto.items.reduce((sum, item) => {
+      const product = productMap.get(item.product_id)!;
+      return sum + product.price * item.quantity;
+    }, 0);
     const shippingCost = subtotal >= 50 ? 0 : 5;
     const tax = subtotal * 0.08;
     const total = subtotal + shippingCost + tax;
@@ -148,18 +161,21 @@ export class OrdersService {
       .select()
       .single();
 
-    if (orderError) throw new InternalServerErrorException(orderError.message);
+    if (orderError) throw new InternalServerErrorException('Failed to create order');
 
-    const orderItems = dto.items.map((item) => ({
-      order_id: order.id,
-      product_id: item.product_id,
-      product_name: item.product_name,
-      product_image: item.product_image || null,
-      price: item.price,
-      quantity: item.quantity,
-      selected_size: item.selected_size || null,
-      selected_color: item.selected_color || null,
-    }));
+    const orderItems = dto.items.map((item) => {
+      const product = productMap.get(item.product_id)!;
+      return {
+        order_id: order.id,
+        product_id: item.product_id,
+        product_name: product.name,
+        product_image: (product.images as any)?.[0] || null,
+        price: product.price,
+        quantity: item.quantity,
+        selected_size: item.selected_size || null,
+        selected_color: item.selected_color || null,
+      };
+    });
 
     const { error: itemsError } = await this.supabase
       .from('order_items')
@@ -196,7 +212,7 @@ export class OrdersService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException(error.message);
+    if (error) throw new InternalServerErrorException('An internal error occurred');
     return data;
   }
 }
