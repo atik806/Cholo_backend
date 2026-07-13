@@ -30,6 +30,12 @@ const UpdateRoleSchema = z.object({
   role: z.enum(['customer', 'admin']),
 });
 
+const UpdateBugReportSchema = z.object({
+  status: z.enum(['pending', 'reviewed', 'resolved']).optional(),
+  priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+  admin_reply: z.string().max(2000).optional(),
+});
+
 const CreateUserSchema = z.object({
   name: z.string().min(1).max(100),
   email: z.string().email(),
@@ -217,5 +223,33 @@ export class AdminController {
   @ApiOperation({ summary: 'Delete a contact message' })
   async deleteContactMessage(@Param('id', UuidParamPipe) id: string) {
     return this.adminService.deleteContactMessage(id);
+  }
+
+  @Get('bug-reports')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all bug reports with pagination' })
+  async findAllBugReports(
+    @Query(new ZodValidationPipe(PaginationQuerySchema))
+    query: {
+      page?: number;
+      limit?: number;
+    },
+  ) {
+    return this.adminService.findAllBugReports(query);
+  }
+
+  @Patch('bug-reports/:id')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update bug report status or reply' })
+  async updateBugReport(
+    @Param('id', UuidParamPipe) id: string,
+    @Body(new ZodValidationPipe(UpdateBugReportSchema))
+    body: { status?: string; admin_reply?: string },
+  ) {
+    return this.adminService.updateBugReport(id, body);
   }
 }

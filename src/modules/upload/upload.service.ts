@@ -46,4 +46,38 @@ export class UploadService {
 
     return publicUrl.publicUrl;
   }
+
+  async uploadToBucket(file: Express.Multer.File, bucketName: string): Promise<string> {
+    const fileExt = file.originalname.split('.').pop()?.toLowerCase() || '';
+    if (!ALLOWED_EXTENSIONS.has(fileExt)) {
+      throw new InternalServerErrorException(
+        `Invalid file extension: .${fileExt}. Allowed: ${[...ALLOWED_EXTENSIONS].join(', ')}`,
+      );
+    }
+
+    const { data: buckets } = await this.supabase.storage.listBuckets();
+    const bucketExists = buckets?.some((b) => b.name === bucketName);
+    if (!bucketExists) {
+      await this.supabase.storage.createBucket(bucketName, { public: true });
+    }
+
+    const fileName = `${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
+
+    const { error } = await this.supabase.storage
+      .from(bucketName)
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (error)
+      throw new InternalServerErrorException('Upload failed: ' + error.message);
+
+    const { data: publicUrl } = this.supabase.storage
+      .from(bucketName)
+      .getPublicUrl(fileName);
+
+    return publicUrl.publicUrl;
+  }
 }

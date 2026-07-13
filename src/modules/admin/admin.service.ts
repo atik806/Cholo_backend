@@ -345,4 +345,53 @@ export class AdminService {
     if (error) throw new InternalServerErrorException('An internal error occurred');
     return { message: 'Message deleted successfully' };
   }
+
+  async findAllBugReports(query: { page?: number; limit?: number }) {
+    const page = query.page || 1;
+    const limit = query.limit || 20;
+    const offset = (page - 1) * limit;
+
+    const { data, error, count } = await this.supabase
+      .from('bug_reports')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw new InternalServerErrorException('An internal error occurred');
+
+    return {
+      data: data || [],
+      meta: {
+        total: count || 0,
+        page,
+        limit,
+        totalPages: Math.ceil((count || 0) / limit),
+      },
+    };
+  }
+
+  async updateBugReport(
+    id: string,
+    body: { status?: string; priority?: string; admin_reply?: string },
+  ) {
+    const update: Record<string, unknown> = {};
+    if (body.status) update.status = body.status;
+    if (body.priority) update.priority = body.priority;
+    if (body.admin_reply !== undefined) update.admin_reply = body.admin_reply;
+
+    if (Object.keys(update).length === 0) {
+      throw new BadRequestException('No fields to update');
+    }
+
+    const { data, error } = await this.supabase
+      .from('bug_reports')
+      .update(update)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (!data) throw new NotFoundException('Bug report not found');
+    return data;
+  }
 }

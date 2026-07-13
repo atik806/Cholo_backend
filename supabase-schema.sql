@@ -1,6 +1,39 @@
 -- CholoKini E-Commerce Database Schema for Supabase
 -- Run this in your Supabase SQL Editor
 
+-- Bug Reports
+CREATE TABLE bug_reports (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  message TEXT NOT NULL,
+  screenshot_url TEXT,
+  page_url TEXT NOT NULL,
+  user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  priority TEXT DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'critical')),
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'reviewed', 'resolved')),
+  admin_reply TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE bug_reports ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can insert bug reports' AND tablename = 'bug_reports') THEN
+    CREATE POLICY "Anyone can insert bug reports" ON bug_reports
+      FOR INSERT WITH CHECK (true);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Service role can manage bug reports' AND tablename = 'bug_reports') THEN
+    CREATE POLICY "Service role can manage bug reports" ON bug_reports
+      FOR ALL USING (auth.role() = 'service_role');
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_bug_reports_created_at ON bug_reports(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bug_reports_status ON bug_reports(status);
+
+
 -- Profiles (extends Supabase Auth users)
 CREATE TABLE profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,

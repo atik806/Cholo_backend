@@ -14,6 +14,7 @@ import { WishlistModule } from './modules/wishlist/wishlist.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
 import { UploadModule } from './modules/upload/upload.module.js';
 import { ContactModule } from './modules/contact/contact.module.js';
+import { ReportsModule } from './modules/reports/reports.module.js';
 import { HttpCacheInterceptor } from './common/interceptors/http-cache.interceptor.js';
 
 @Module({
@@ -35,6 +36,7 @@ import { HttpCacheInterceptor } from './common/interceptors/http-cache.intercept
     AdminModule,
     UploadModule,
     ContactModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [
