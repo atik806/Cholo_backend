@@ -40,6 +40,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
         `Unhandled exception: ${exception.message}`,
         exception.stack,
       );
+    } else {
+      this.logger.error(`Non-Error exception thrown: ${JSON.stringify(exception)}`);
     }
 
     const isProd = process.env.NODE_ENV === 'production';

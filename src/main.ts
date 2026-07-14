@@ -8,7 +8,7 @@ import compression from 'compression';
 import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
-  const required = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'ADMIN_EMAIL'];
+  const required = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'ADMIN_EMAIL', 'ADMIN_PASSWORD'];
   const missing = required.filter((key) => !process.env[key]);
   if (missing.length > 0) {
     console.error(`Missing required environment variables: ${missing.join(', ')}`);
