@@ -3,6 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
   InternalServerErrorException,
+  NotFoundException,
   Logger,
 } from '@nestjs/common';
 import type { RegisterDto } from './dto/register.dto.js';
@@ -16,8 +17,17 @@ import {
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  private supabase = createSupabaseClient();
-  private supabaseAdmin = createSupabaseAdminClient();
+  private _supabase: ReturnType<typeof createSupabaseClient> | null = null;
+  private _supabaseAdmin: ReturnType<typeof createSupabaseAdminClient> | null = null;
+
+  private get supabase() {
+    if (!this._supabase) this._supabase = createSupabaseClient();
+    return this._supabase;
+  }
+  private get supabaseAdmin() {
+    if (!this._supabaseAdmin) this._supabaseAdmin = createSupabaseAdminClient();
+    return this._supabaseAdmin;
+  }
 
   async register(dto: RegisterDto) {
     const { data: authData, error: authError } =
@@ -173,7 +183,7 @@ export class AuthService {
       .single();
 
     if (error || !profile) {
-      throw new UnauthorizedException('User not found');
+      throw new NotFoundException('User not found');
     }
 
     return profile;
@@ -229,5 +239,24 @@ export class AuthService {
     }
 
     throw new UnauthorizedException('You do not have admin access');
+  }
+
+  async syncOAuthProfile(userId: string, name: string, email: string) {
+    const displayName = name || email.split('@')[0] || 'User';
+    const { error } = await this.supabaseAdmin
+      .from('profiles')
+      .upsert(
+        { id: userId, name: displayName, email, role: 'customer' },
+        { onConflict: 'id', ignoreDuplicates: true },
+      );
+    if (error) {
+      this.logger.error(`Failed to sync OAuth profile: ${error.message} (${error.code})`);
+      throw new InternalServerErrorException('Failed to create user profile');
+    }
+    try {
+      return await this.getProfile(userId);
+    } catch {
+      throw new InternalServerErrorException('Failed to create profile');
+    }
   }
 }
