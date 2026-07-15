@@ -253,24 +253,43 @@ export class AuthService {
   async syncOAuthProfile(userId: string, name: string, email: string) {
     const displayName = name || email.split('@')[0] || 'User';
 
-    await this.supabaseAdmin.from('profiles').delete().eq('email', email);
-
-    const { error } = await this.supabaseAdmin
+    // Direct upsert — no prior delete (avoids race conditions and RLS issues)
+    const { error: upsertError } = await this.supabaseAdmin
       .from('profiles')
       .upsert(
         { id: userId, name: displayName, email, role: 'customer' },
         { onConflict: 'id' },
       );
-    if (error) {
+
+    if (upsertError) {
       this.logger.error(
-        `Failed to sync OAuth profile: ${error.message} (${error.code})`,
+        `Failed to sync OAuth profile (attempt 1): ${upsertError.message} (${upsertError.code})`,
       );
-      throw new InternalServerErrorException('Failed to create user profile');
+
+      // Retry once after a short delay
+      await new Promise((r) => setTimeout(r, 500));
+
+      const { error: retryError } = await this.supabaseAdmin
+        .from('profiles')
+        .upsert(
+          { id: userId, name: displayName, email, role: 'customer' },
+          { onConflict: 'id' },
+        );
+
+      if (retryError) {
+        this.logger.error(
+          `Failed to sync OAuth profile (attempt 2): ${retryError.message} (${retryError.code})`,
+        );
+        throw new InternalServerErrorException('Failed to create user profile');
+      }
     }
+
+    // Verify profile exists
     try {
       return await this.getProfile(userId);
     } catch {
-      throw new InternalServerErrorException('Failed to create profile');
+      this.logger.error(`Profile upsert succeeded but getProfile failed for user ${userId}`);
+      throw new InternalServerErrorException('Failed to retrieve created profile');
     }
   }
 }
