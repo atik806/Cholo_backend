@@ -15,6 +15,7 @@ import { AdminModule } from './modules/admin/admin.module.js';
 import { UploadModule } from './modules/upload/upload.module.js';
 import { ContactModule } from './modules/contact/contact.module.js';
 import { ReportsModule } from './modules/reports/reports.module.js';
+import { SiteSettingsModule } from './modules/site-settings/site-settings.module.js';
 import { HttpCacheInterceptor } from './common/interceptors/http-cache.interceptor.js';
 
 @Module({
@@ -39,6 +40,7 @@ import { HttpCacheInterceptor } from './common/interceptors/http-cache.intercept
     UploadModule,
     ContactModule,
     ReportsModule,
+    SiteSettingsModule,
   ],
   controllers: [AppController],
   providers: [
