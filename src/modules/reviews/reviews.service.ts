@@ -14,6 +14,18 @@ import { createSupabaseAdminClient } from '../../config/supabase.config.js';
 export class ReviewsService {
   private supabase = createSupabaseAdminClient();
 
+  async findRecent(limit = 6) {
+    const { data, error } = await this.supabase
+      .from('reviews')
+      .select('id, rating, text, created_at, product_id, user_id, profiles(name, avatar_url), products(name, slug, images)')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
+    return data || [];
+  }
+
   async findByProduct(productId: string, page = 1, limit = 20) {
     const from = (page - 1) * limit;
     const { data, error, count } = await this.supabase

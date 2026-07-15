@@ -27,6 +27,12 @@ import {
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
+  @Get('reviews/recent')
+  @ApiOperation({ summary: 'Get recent reviews across all products' })
+  async findRecent() {
+    return this.reviewsService.findRecent();
+  }
+
   @Get('products/:productId/reviews')
   @ApiOperation({ summary: 'Get reviews for a product' })
   async findByProduct(@Param('productId', UuidParamPipe) productId: string) {
