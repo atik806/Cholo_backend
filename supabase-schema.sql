@@ -1,4 +1,4 @@
--- CholoKini E-Commerce Database Schema for Supabase
+-- Dhaka Wholesale E-Commerce Database Schema for Supabase
 -- Run this in your Supabase SQL Editor
 
 -- Bug Reports

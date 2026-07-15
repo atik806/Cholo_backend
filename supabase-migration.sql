@@ -1,4 +1,4 @@
--- CholoKini Database Migration: Security & Data Integrity Fixes
+-- Dhaka Wholesale Database Migration: Security & Data Integrity Fixes
 -- Run this after the initial supabase-schema.sql
 
 -- 1. Fix ON DELETE CASCADE on orders.user_id

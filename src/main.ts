@@ -46,8 +46,8 @@ async function bootstrap() {
 
   if (process.env.ENABLE_SWAGGER === 'true') {
     const config = new DocumentBuilder()
-      .setTitle('CholoKini E-Commerce API')
-      .setDescription('E-commerce backend for CholoKini store')
+      .setTitle('Dhaka Wholesale E-Commerce API')
+      .setDescription('E-commerce backend for Dhaka Wholesale store')
       .setVersion('1.0')
       .addBearerAuth()
       .build();
