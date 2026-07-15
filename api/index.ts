@@ -11,9 +11,9 @@ let app: any;
 async function bootstrap() {
   if (app) return app;
 
-  const { AppModule } = require('../dist/app.module.js');
-  const { AllExceptionsFilter } = require('../dist/common/filters/http-exception.filter.js');
-  const { TransformInterceptor } = require('../dist/common/interceptors/transform.interceptor.js');
+  const { AppModule } = require('../dist/src/app.module.js');
+  const { AllExceptionsFilter } = require('../dist/src/common/filters/http-exception.filter.js');
+  const { TransformInterceptor } = require('../dist/src/common/interceptors/transform.interceptor.js');
 
   const adapter = new ExpressAdapter(server);
   app = await NestFactory.create(AppModule, adapter);
