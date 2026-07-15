@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import helmet from 'helmet';
@@ -10,10 +11,9 @@ let app: any;
 async function bootstrap() {
   if (app) return app;
 
-  // Dynamic imports from compiled dist/ folder
-  const { AppModule } = await import('../dist/app.module.js');
-  const { AllExceptionsFilter } = await import('../dist/common/filters/http-exception.filter.js');
-  const { TransformInterceptor } = await import('../dist/common/interceptors/transform.interceptor.js');
+  const { AppModule } = require('../dist/app.module.js');
+  const { AllExceptionsFilter } = require('../dist/common/filters/http-exception.filter.js');
+  const { TransformInterceptor } = require('../dist/common/interceptors/transform.interceptor.js');
 
   const adapter = new ExpressAdapter(server);
   app = await NestFactory.create(AppModule, adapter);
@@ -40,16 +40,16 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
 
   if (process.env.ENABLE_SWAGGER === 'true') {
-    const { DocumentBuilder, SwaggerModule } = await import('@nestjs/swagger');
-    const config = new DocumentBuilder()
+    const swagger = require('@nestjs/swagger');
+    const config = new swagger.DocumentBuilder()
       .setTitle('Dhaka Wholesale E-Commerce API')
       .setDescription('E-commerce backend for Dhaka Wholesale store')
       .setVersion('1.0')
       .addBearerAuth()
       .build();
 
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/docs', app, document);
+    const document = swagger.SwaggerModule.createDocument(app, config);
+    swagger.SwaggerModule.setup('api/docs', app, document);
   }
 
   await app.init();
