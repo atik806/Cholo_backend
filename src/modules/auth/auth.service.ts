@@ -233,7 +233,7 @@ export class AuthService {
 
     const { data: profile } = await this.supabaseAdmin
       .from('profiles')
-      .select('id, name, email, role')
+      .select('id, name, email, role, phone, avatar_url, shipping_address')
       .eq('id', userId)
       .maybeSingle();
 
@@ -244,6 +244,9 @@ export class AuthService {
           email: dto.email,
           name: profile.name || 'Admin',
           role: 'admin' as const,
+          phone: profile.phone || null,
+          avatar_url: profile.avatar_url || null,
+          shipping_address: profile.shipping_address || null,
         },
         session: {
           access_token: signInData.session.access_token,
