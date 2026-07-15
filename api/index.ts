@@ -1,32 +1,26 @@
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
-import { AppModule } from '../src/app.module.js';
-import { AllExceptionsFilter } from '../src/common/filters/http-exception.filter.js';
-import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor.js';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import compression from 'compression';
 import express from 'express';
 
 const server = express();
-
 let app: any;
 
 async function bootstrap() {
   if (app) return app;
 
-  const required = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'ADMIN_EMAIL', 'ADMIN_PASSWORD'];
-  const missing = required.filter((key) => !process.env[key]);
-  if (missing.length > 0) {
-    console.error(`Missing required environment variables: ${missing.join(', ')}`);
-  }
+  // Dynamic imports from compiled dist/ folder
+  const { AppModule } = await import('../dist/app.module.js');
+  const { AllExceptionsFilter } = await import('../dist/common/filters/http-exception.filter.js');
+  const { TransformInterceptor } = await import('../dist/common/interceptors/transform.interceptor.js');
 
   const adapter = new ExpressAdapter(server);
   app = await NestFactory.create(AppModule, adapter);
 
   app.setGlobalPrefix('api');
 
-  const corsOriginValue = process.env.CORS_ORIGIN || 'https://dhakawholesale.com';
+  const corsOriginValue = process.env.CORS_ORIGIN || 'https://dhakawholesale.com,http://localhost:3000';
   const corsOrigins = corsOriginValue.split(',').map((o: string) => o.trim()).filter(Boolean);
 
   app.enableCors({
@@ -46,6 +40,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
 
   if (process.env.ENABLE_SWAGGER === 'true') {
+    const { DocumentBuilder, SwaggerModule } = await import('@nestjs/swagger');
     const config = new DocumentBuilder()
       .setTitle('Dhaka Wholesale E-Commerce API')
       .setDescription('E-commerce backend for Dhaka Wholesale store')
