@@ -129,7 +129,7 @@ export class AuthService {
 
     const { data: profile } = await this.supabaseAdmin
       .from('profiles')
-      .select('name, role')
+      .select('name, role, phone, avatar_url, shipping_address')
       .eq('id', user.id)
       .single();
 
@@ -139,6 +139,9 @@ export class AuthService {
         email: user.email,
         name: profile?.name || user.email,
         role: profile?.role || 'customer',
+        phone: profile?.phone || null,
+        avatar_url: profile?.avatar_url || null,
+        shipping_address: profile?.shipping_address || null,
       },
       session: {
         access_token: data.session.access_token,
@@ -161,7 +164,7 @@ export class AuthService {
 
     const { data: profile } = await this.supabaseAdmin
       .from('profiles')
-      .select('name, role')
+      .select('name, role, phone, avatar_url, shipping_address')
       .eq('id', user.id)
       .single();
 
@@ -171,6 +174,9 @@ export class AuthService {
         email: user.email ?? '',
         name: profile?.name ?? user.email ?? '',
         role: profile?.role || 'customer',
+        phone: profile?.phone || null,
+        avatar_url: profile?.avatar_url || null,
+        shipping_address: profile?.shipping_address || null,
       },
       session: {
         access_token: data.session.access_token,
