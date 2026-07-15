@@ -1,32 +1,33 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module.js';
-import { AllExceptionsFilter } from './common/filters/http-exception.filter.js';
-import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
+import { ExpressAdapter } from '@nestjs/platform-express';
+import { AppModule } from '../src/app.module.js';
+import { AllExceptionsFilter } from '../src/common/filters/http-exception.filter.js';
+import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor.js';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import compression from 'compression';
-import { Logger } from '@nestjs/common';
+import express from 'express';
+
+const server = express();
+
+let app: any;
 
 async function bootstrap() {
+  if (app) return app;
+
   const required = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'ADMIN_EMAIL', 'ADMIN_PASSWORD'];
   const missing = required.filter((key) => !process.env[key]);
   if (missing.length > 0) {
     console.error(`Missing required environment variables: ${missing.join(', ')}`);
-    process.exit(1);
   }
 
-  const corsOriginValue = process.env.CORS_ORIGIN || 'https://dhakawholesale.com';
-  const isDev = process.env.NODE_ENV !== 'production';
-
-  const app = await NestFactory.create(AppModule);
-  const logger = new Logger('Bootstrap');
+  const adapter = new ExpressAdapter(server);
+  app = await NestFactory.create(AppModule, adapter);
 
   app.setGlobalPrefix('api');
 
-  const corsOrigins = corsOriginValue.split(',').map((o) => o.trim()).filter(Boolean);
-  if (isDev && !corsOrigins.includes('http://localhost:3000')) {
-    corsOrigins.push('http://localhost:3000');
-  }
+  const corsOriginValue = process.env.CORS_ORIGIN || 'https://dhakawholesale.com';
+  const corsOrigins = corsOriginValue.split(',').map((o: string) => o.trim()).filter(Boolean);
 
   app.enableCors({
     origin: corsOrigins,
@@ -56,13 +57,11 @@ async function bootstrap() {
     SwaggerModule.setup('api/docs', app, document);
   }
 
-  app.enableShutdownHooks();
-
-  const port = process.env.PORT ?? 5000;
-  await app.listen(port);
-  logger.log(`Application is running on: http://localhost:${port}`);
-  if (process.env.ENABLE_SWAGGER === 'true') {
-    logger.log(`Swagger docs: http://localhost:${port}/api/docs`);
-  }
+  await app.init();
+  return app;
 }
-void bootstrap();
+
+export default async function handler(req: any, res: any) {
+  await bootstrap();
+  server(req, res);
+}
