@@ -9,11 +9,14 @@ export class WishlistService {
   async findByUser(userId: string) {
     const { data, error } = await this.supabase
       .from('wishlists')
-      .select('id, user_id, product_id, created_at, products(id, name, slug, price, images, category, stock, original_price, rating, review_count, is_new)')
+      .select(
+        'id, user_id, product_id, created_at, products(id, name, slug, price, images, category, stock, original_price, rating, review_count, is_new)',
+      )
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     return data || [];
   }
 
@@ -33,7 +36,8 @@ export class WishlistService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     return data;
   }
 
@@ -44,7 +48,8 @@ export class WishlistService {
       .eq('user_id', userId)
       .eq('product_id', productId);
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     return { message: 'Removed from wishlist' };
   }
 
@@ -56,7 +61,8 @@ export class WishlistService {
       .eq('product_id', productId)
       .maybeSingle();
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     return { isInWishlist: !!data };
   }
 }

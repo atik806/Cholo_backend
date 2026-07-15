@@ -4,7 +4,10 @@ import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import type { CreateOrderDto, CheckoutOrderDto } from './dto/create-order.dto.js';
+import type {
+  CreateOrderDto,
+  CheckoutOrderDto,
+} from './dto/create-order.dto.js';
 import { createSupabaseAdminClient } from '../../config/supabase.config.js';
 
 @Injectable()
@@ -20,7 +23,8 @@ export class OrdersService {
       .order('created_at', { ascending: false })
       .range(from, from + limit - 1);
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     return {
       data: data || [],
       meta: {
@@ -50,13 +54,14 @@ export class OrdersService {
       .select('*, products(*)')
       .eq('user_id', userId);
 
-    if (cartError) throw new InternalServerErrorException('Failed to verify products');
+    if (cartError)
+      throw new InternalServerErrorException('Failed to verify products');
     if (!cartItems || cartItems.length === 0) {
       throw new BadRequestException('Cart is empty');
     }
 
     const subtotal = cartItems.reduce(
-      (sum, item) => sum + ((item.products as any)?.price || 0) * item.quantity,
+      (sum, item) => sum + (item.products?.price || 0) * item.quantity,
       0,
     );
     const shippingCost = subtotal >= 50 ? 0 : 5;
@@ -84,9 +89,9 @@ export class OrdersService {
     const orderItems = cartItems.map((item) => ({
       order_id: order.id,
       product_id: item.product_id,
-      product_name: (item.products as any)?.name || '',
-      product_image: (item.products as any)?.images?.[0] || null,
-      price: (item.products as any)?.price || 0,
+      product_name: item.products?.name || '',
+      product_image: item.products?.images?.[0] || null,
+      price: item.products?.price || 0,
       quantity: item.quantity,
       selected_size: item.selected_size,
       selected_color: item.selected_color,
@@ -117,7 +122,8 @@ export class OrdersService {
         .select('id')
         .limit(1)
         .single();
-      if (!fallback) throw new InternalServerErrorException('No user profile found');
+      if (!fallback)
+        throw new InternalServerErrorException('No user profile found');
       return fallback.id;
     }
     return data.id;
@@ -130,7 +136,8 @@ export class OrdersService {
       .select('id, name, price, images')
       .in('id', productIds);
 
-    if (prodError) throw new InternalServerErrorException('Failed to verify products');
+    if (prodError)
+      throw new InternalServerErrorException('Failed to verify products');
     if (!products || products.length !== productIds.length) {
       throw new BadRequestException('One or more products are invalid');
     }
@@ -161,7 +168,8 @@ export class OrdersService {
       .select()
       .single();
 
-    if (orderError) throw new InternalServerErrorException('Failed to create order');
+    if (orderError)
+      throw new InternalServerErrorException('Failed to create order');
 
     const orderItems = dto.items.map((item) => {
       const product = productMap.get(item.product_id)!;
@@ -169,7 +177,7 @@ export class OrdersService {
         order_id: order.id,
         product_id: item.product_id,
         product_name: product.name,
-        product_image: (product.images as any)?.[0] || null,
+        product_image: product.images?.[0] || null,
         price: product.price,
         quantity: item.quantity,
         selected_size: item.selected_size || null,
@@ -212,7 +220,8 @@ export class OrdersService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     return data;
   }
 }

@@ -8,14 +8,23 @@ import compression from 'compression';
 import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
-  const required = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'ADMIN_EMAIL', 'ADMIN_PASSWORD'];
+  const required = [
+    'SUPABASE_URL',
+    'SUPABASE_ANON_KEY',
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'ADMIN_EMAIL',
+    'ADMIN_PASSWORD',
+  ];
   const missing = required.filter((key) => !process.env[key]);
   if (missing.length > 0) {
-    console.error(`Missing required environment variables: ${missing.join(', ')}`);
+    console.error(
+      `Missing required environment variables: ${missing.join(', ')}`,
+    );
     process.exit(1);
   }
 
-  const corsOriginValue = process.env.CORS_ORIGIN || 'https://dhakawholesale.com';
+  const corsOriginValue =
+    process.env.CORS_ORIGIN || 'https://dhakawholesale.com';
   const isDev = process.env.NODE_ENV !== 'production';
 
   const app = await NestFactory.create(AppModule);
@@ -23,7 +32,10 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
-  const corsOrigins = corsOriginValue.split(',').map((o) => o.trim()).filter(Boolean);
+  const corsOrigins = corsOriginValue
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
   if (isDev && !corsOrigins.includes('http://localhost:3000')) {
     corsOrigins.push('http://localhost:3000');
   }
@@ -33,12 +45,14 @@ async function bootstrap() {
     credentials: true,
   });
 
-  app.use(helmet({
-    crossOriginResourcePolicy: { policy: 'cross-origin' },
-    crossOriginEmbedderPolicy: false,
-    crossOriginOpenerPolicy: false,
-    contentSecurityPolicy: false,
-  }));
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      crossOriginEmbedderPolicy: false,
+      crossOriginOpenerPolicy: false,
+      contentSecurityPolicy: false,
+    }),
+  );
   app.use(compression());
 
   app.useGlobalFilters(new AllExceptionsFilter());

@@ -1,6 +1,6 @@
 import { Controller, Post, Get, Patch, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { Throttle, SkipThrottle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import { z } from 'zod';
 import { AuthService } from './auth.service.js';
 import { AuthGuard } from '../../common/guards/auth.guard.js';
@@ -9,7 +9,10 @@ import type { JwtUser } from '../../common/decorators/current-user.decorator.js'
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import { RegisterSchema, type RegisterDto } from './dto/register.dto.js';
 import { LoginSchema, type LoginDto } from './dto/login.dto.js';
-import { RefreshTokenSchema, type RefreshTokenDto } from './dto/refresh-token.dto.js';
+import {
+  RefreshTokenSchema,
+  type RefreshTokenDto,
+} from './dto/refresh-token.dto.js';
 import {
   UpdateProfileSchema,
   type UpdateProfileDto,
@@ -82,7 +85,8 @@ export class AuthController {
   @ApiOperation({ summary: 'Sync OAuth user profile (creates if missing)' })
   async syncProfile(
     @CurrentUser() user: JwtUser,
-    @Body(new ZodValidationPipe(SyncProfileSchema)) dto: { name: string; email: string },
+    @Body(new ZodValidationPipe(SyncProfileSchema))
+    dto: { name: string; email: string },
   ) {
     return this.authService.syncOAuthProfile(user.id, dto.name, dto.email);
   }

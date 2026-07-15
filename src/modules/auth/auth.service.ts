@@ -18,7 +18,8 @@ import {
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private _supabase: ReturnType<typeof createSupabaseClient> | null = null;
-  private _supabaseAdmin: ReturnType<typeof createSupabaseAdminClient> | null = null;
+  private _supabaseAdmin: ReturnType<typeof createSupabaseAdminClient> | null =
+    null;
 
   private get supabase() {
     if (!this._supabase) this._supabase = createSupabaseClient();
@@ -52,22 +53,24 @@ export class AuthService {
       throw new InternalServerErrorException('Failed to create user');
     }
 
-    await this.supabaseAdmin
-      .from('profiles')
-      .delete()
-      .eq('email', dto.email);
+    await this.supabaseAdmin.from('profiles').delete().eq('email', dto.email);
 
     const { error: profileError } = await this.supabaseAdmin
       .from('profiles')
-      .upsert({
-        id: userId,
-        name: dto.name,
-        email: dto.email,
-        role: 'customer',
-      }, { onConflict: 'id' });
+      .upsert(
+        {
+          id: userId,
+          name: dto.name,
+          email: dto.email,
+          role: 'customer',
+        },
+        { onConflict: 'id' },
+      );
 
     if (profileError) {
-      this.logger.error(`Failed to create profile: ${profileError.message} (${profileError.code})`);
+      this.logger.error(
+        `Failed to create profile: ${profileError.message} (${profileError.code})`,
+      );
       await this.supabaseAdmin.auth.admin.deleteUser(userId);
       throw new InternalServerErrorException('Failed to create profile');
     }
@@ -79,7 +82,9 @@ export class AuthService {
       });
 
     if (signInError) {
-      this.logger.error(`Failed to sign in after registration: ${signInError.message}`);
+      this.logger.error(
+        `Failed to sign in after registration: ${signInError.message}`,
+      );
       return {
         user: {
           id: userId,
@@ -189,10 +194,7 @@ export class AuthService {
     return profile;
   }
 
-  async updateProfile(
-    userId: string,
-    updates: UpdateProfileDto,
-  ) {
+  async updateProfile(userId: string, updates: UpdateProfileDto) {
     const { data, error } = await this.supabaseAdmin
       .from('profiles')
       .update(updates)
@@ -201,7 +203,9 @@ export class AuthService {
       .single();
 
     if (error) {
-      this.logger.error(`Failed to update profile: ${error.message} (${error.code})`);
+      this.logger.error(
+        `Failed to update profile: ${error.message} (${error.code})`,
+      );
       throw new InternalServerErrorException('Failed to update profile');
     }
 
@@ -229,7 +233,12 @@ export class AuthService {
 
     if (profile?.role === 'admin') {
       return {
-        user: { id: userId, email: dto.email, name: profile.name || 'Admin', role: 'admin' as const },
+        user: {
+          id: userId,
+          email: dto.email,
+          name: profile.name || 'Admin',
+          role: 'admin' as const,
+        },
         session: {
           access_token: signInData.session.access_token,
           refresh_token: signInData.session.refresh_token,
@@ -253,7 +262,9 @@ export class AuthService {
         { onConflict: 'id' },
       );
     if (error) {
-      this.logger.error(`Failed to sync OAuth profile: ${error.message} (${error.code})`);
+      this.logger.error(
+        `Failed to sync OAuth profile: ${error.message} (${error.code})`,
+      );
       throw new InternalServerErrorException('Failed to create user profile');
     }
     try {

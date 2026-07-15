@@ -7,15 +7,13 @@ export class ContactService {
   private supabase = createSupabaseAdminClient();
 
   async create(dto: CreateContactDto) {
-    const { error } = await this.supabase
-      .from('contact_messages')
-      .insert({
-        first_name: dto.first_name,
-        last_name: dto.last_name,
-        email: dto.email,
-        subject: dto.subject,
-        message: dto.message,
-      });
+    const { error } = await this.supabase.from('contact_messages').insert({
+      first_name: dto.first_name,
+      last_name: dto.last_name,
+      email: dto.email,
+      subject: dto.subject,
+      message: dto.message,
+    });
 
     if (error) {
       throw new InternalServerErrorException('Failed to submit message');

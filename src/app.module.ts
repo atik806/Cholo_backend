@@ -22,10 +22,12 @@ import { HttpCacheInterceptor } from './common/interceptors/http-cache.intercept
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 60,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 60,
+      },
+    ]),
     AuthModule,
     CategoriesModule,
     ProductsModule,

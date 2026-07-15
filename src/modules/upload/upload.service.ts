@@ -47,7 +47,10 @@ export class UploadService {
     return publicUrl.publicUrl;
   }
 
-  async uploadToBucket(file: Express.Multer.File, bucketName: string): Promise<string> {
+  async uploadToBucket(
+    file: Express.Multer.File,
+    bucketName: string,
+  ): Promise<string> {
     const fileExt = file.originalname.split('.').pop()?.toLowerCase() || '';
     if (!ALLOWED_EXTENSIONS.has(fileExt)) {
       throw new InternalServerErrorException(

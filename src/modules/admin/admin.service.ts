@@ -77,7 +77,8 @@ export class AdminService {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
 
     return {
       data: data || [],
@@ -120,7 +121,8 @@ export class AdminService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     if (!data) throw new NotFoundException('Order not found');
     return data;
   }
@@ -149,7 +151,8 @@ export class AdminService {
       .delete()
       .eq('id', orderId);
 
-    if (orderError) throw new InternalServerErrorException('An internal error occurred');
+    if (orderError)
+      throw new InternalServerErrorException('An internal error occurred');
 
     return { message: 'Order deleted successfully' };
   }
@@ -167,12 +170,17 @@ export class AdminService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     if (!data) throw new NotFoundException('Order not found');
     return data;
   }
 
-  async findAllUsers(query: { page?: number; limit?: number; search?: string }) {
+  async findAllUsers(query: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }) {
     const page = query.page || 1;
     const limit = query.limit || 20;
     const offset = (page - 1) * limit;
@@ -182,7 +190,7 @@ export class AdminService {
       .select('id, name, email, role, created_at', { count: 'exact' });
 
     if (query.search) {
-      const sanitized = query.search.replace(/[(),\.]/g, '').slice(0, 200);
+      const sanitized = query.search.replace(/[(),.]/g, '').slice(0, 200);
       sb = sb.or(`name.ilike.%${sanitized}%,email.ilike.%${sanitized}%`);
     }
 
@@ -190,7 +198,8 @@ export class AdminService {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     return {
       data: data || [],
       meta: {
@@ -202,7 +211,12 @@ export class AdminService {
     };
   }
 
-  async createUser(dto: { name: string; email: string; password: string; role: string }) {
+  async createUser(dto: {
+    name: string;
+    email: string;
+    password: string;
+    role: string;
+  }) {
     const { data: existing } = await this.supabase
       .from('profiles')
       .select('id')
@@ -222,12 +236,10 @@ export class AdminService {
 
     if (createError) {
       this.logger.error(`Failed to create auth user: ${createError.message}`);
-      throw new InternalServerErrorException(
-        'Failed to create user',
-      );
+      throw new InternalServerErrorException('Failed to create user');
     }
 
-    const userId = authData.user!.id;
+    const userId = authData.user.id;
 
     const { data: profile, error: profileError } = await this.supabase
       .from('profiles')
@@ -243,9 +255,7 @@ export class AdminService {
     if (profileError) {
       this.logger.error(`Failed to create profile: ${profileError.message}`);
       await this.supabase.auth.admin.deleteUser(userId);
-      throw new InternalServerErrorException(
-        'Failed to create profile',
-      );
+      throw new InternalServerErrorException('Failed to create profile');
     }
 
     this.logger.log(`User created successfully: ${dto.email} (${dto.role})`);
@@ -265,7 +275,8 @@ export class AdminService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     if (!data) throw new NotFoundException('User not found');
     return data;
   }
@@ -275,9 +286,14 @@ export class AdminService {
       await this.supabase.auth.admin.deleteUser(userId);
     if (authError) throw new InternalServerErrorException(authError.message);
 
-    const { error: profileError } = await this.supabase.from('profiles').delete().eq('id', userId);
+    const { error: profileError } = await this.supabase
+      .from('profiles')
+      .delete()
+      .eq('id', userId);
     if (profileError) {
-      this.logger.error(`Failed to delete profile for user ${userId}: ${profileError.message}`);
+      this.logger.error(
+        `Failed to delete profile for user ${userId}: ${profileError.message}`,
+      );
     }
 
     return { message: 'User deleted successfully' };
@@ -296,7 +312,8 @@ export class AdminService {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
 
     return {
       data: data || [],
@@ -323,7 +340,8 @@ export class AdminService {
       .delete()
       .eq('id', reviewId);
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
 
     return { message: 'Review deleted successfully' };
   }
@@ -339,7 +357,8 @@ export class AdminService {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
 
     return {
       data: data || [],
@@ -360,7 +379,8 @@ export class AdminService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     if (!data) throw new NotFoundException('Message not found');
     return data;
   }
@@ -371,7 +391,8 @@ export class AdminService {
       .delete()
       .eq('id', id);
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     return { message: 'Message deleted successfully' };
   }
 
@@ -386,7 +407,8 @@ export class AdminService {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
 
     return {
       data: data || [],
@@ -419,7 +441,8 @@ export class AdminService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     if (!data) throw new NotFoundException('Bug report not found');
     return data;
   }

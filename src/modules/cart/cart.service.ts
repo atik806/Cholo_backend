@@ -14,11 +14,14 @@ export class CartService {
   async findByUser(userId: string) {
     const { data, error } = await this.supabase
       .from('cart_items')
-      .select('id, user_id, product_id, quantity, selected_size, selected_color, created_at, products(id, name, slug, price, images, category, stock, original_price)')
+      .select(
+        'id, user_id, product_id, quantity, selected_size, selected_color, created_at, products(id, name, slug, price, images, category, stock, original_price)',
+      )
       .eq('user_id', userId)
       .order('created_at', { ascending: true });
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     return data || [];
   }
 
@@ -54,7 +57,8 @@ export class CartService {
         .select()
         .single();
 
-      if (error) throw new InternalServerErrorException('An internal error occurred');
+      if (error)
+        throw new InternalServerErrorException('An internal error occurred');
       return data;
     }
 
@@ -70,7 +74,8 @@ export class CartService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     return data;
   }
 
@@ -108,7 +113,8 @@ export class CartService {
       .delete()
       .eq('user_id', userId);
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     return { message: 'Cart cleared successfully' };
   }
 

@@ -3,7 +3,10 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ReportsService } from './reports.service.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
-import { CreateReportSchema, type CreateReportDto } from './dto/create-report.dto.js';
+import {
+  CreateReportSchema,
+  type CreateReportDto,
+} from './dto/create-report.dto.js';
 
 @ApiTags('Bug Reports')
 @Controller('reports')

@@ -19,7 +19,12 @@ import { AuthGuard } from '../../common/guards/auth.guard.js';
 import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/avif',
+];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const REPORT_MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
@@ -31,7 +36,9 @@ export class UploadController {
   @Post()
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin')
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_FILE_SIZE } }))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_FILE_SIZE } }),
+  )
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Upload an image (Admin only)' })
   @ApiConsumes('multipart/form-data')
@@ -48,7 +55,9 @@ export class UploadController {
 
   @Post('report-screenshot')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: REPORT_MAX_FILE_SIZE } }))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: REPORT_MAX_FILE_SIZE } }),
+  )
   @ApiOperation({ summary: 'Upload a bug report screenshot (Public)' })
   @ApiConsumes('multipart/form-data')
   async uploadReportScreenshot(@UploadedFile() file: Express.Multer.File) {

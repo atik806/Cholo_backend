@@ -17,7 +17,8 @@ export class CategoriesService {
       .select('*')
       .order('name');
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     return data || [];
   }
 
@@ -46,7 +47,8 @@ export class CategoriesService {
       .select()
       .single();
 
-    if (error) throw new InternalServerErrorException('An internal error occurred');
+    if (error)
+      throw new InternalServerErrorException('An internal error occurred');
     return data;
   }
 

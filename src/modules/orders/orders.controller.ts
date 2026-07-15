@@ -38,7 +38,10 @@ export class OrdersController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get order detail' })
-  async findOne(@CurrentUser() user: JwtUser, @Param('id', UuidParamPipe) id: string) {
+  async findOne(
+    @CurrentUser() user: JwtUser,
+    @Param('id', UuidParamPipe) id: string,
+  ) {
     return this.ordersService.findById(id, user.id);
   }
 
@@ -68,7 +71,10 @@ export class OrdersController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cancel a pending order' })
-  async cancel(@CurrentUser() user: JwtUser, @Param('id', UuidParamPipe) id: string) {
+  async cancel(
+    @CurrentUser() user: JwtUser,
+    @Param('id', UuidParamPipe) id: string,
+  ) {
     return this.ordersService.cancelOrder(id, user.id);
   }
 }

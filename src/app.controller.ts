@@ -14,7 +14,7 @@ export class AppController {
   @Get('health')
   @ApiTags('Health')
   @ApiOperation({ summary: 'Health check endpoint' })
-  async health() {
+  health() {
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),

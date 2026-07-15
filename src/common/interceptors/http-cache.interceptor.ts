@@ -30,7 +30,10 @@ export class HttpCacheInterceptor {
     if (cached && cached.expiry > now) {
       const response = context.switchToHttp().getResponse<Response>();
       response.setHeader('X-Cache', 'HIT');
-      response.setHeader('Cache-Control', `public, max-age=${Math.ceil((cached.expiry - now) / 1000)}`);
+      response.setHeader(
+        'Cache-Control',
+        `public, max-age=${Math.ceil((cached.expiry - now) / 1000)}`,
+      );
       return of(cached.data);
     }
 

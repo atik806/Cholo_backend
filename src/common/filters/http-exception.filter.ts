@@ -32,7 +32,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         errors = obj.errors;
       }
 
-      if (status >= 500) {
+      if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
         this.logger.error(`HTTP ${status}: ${message}`, exception.stack);
       }
     } else if (exception instanceof Error) {
@@ -41,12 +41,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
         exception.stack,
       );
     } else {
-      this.logger.error(`Non-Error exception thrown: ${JSON.stringify(exception)}`);
+      this.logger.error(
+        `Non-Error exception thrown: ${JSON.stringify(exception)}`,
+      );
     }
 
-    const isProd = process.env.NODE_ENV === 'production';
     const sanitized =
-      status >= 500
+      status >= HttpStatus.INTERNAL_SERVER_ERROR
         ? 'Internal server error'
         : message;
 

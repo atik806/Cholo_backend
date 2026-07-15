@@ -61,7 +61,10 @@ export class ReviewsController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete own review' })
-  async remove(@CurrentUser() user: JwtUser, @Param('id', UuidParamPipe) id: string) {
+  async remove(
+    @CurrentUser() user: JwtUser,
+    @Param('id', UuidParamPipe) id: string,
+  ) {
     return this.reviewsService.remove(id, user.id);
   }
 }

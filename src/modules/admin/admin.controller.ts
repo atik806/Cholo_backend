@@ -139,7 +139,9 @@ export class AdminController {
   @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all users' })
-  async findAllUsers(@Query() query: { page?: number; limit?: number; search?: string }) {
+  async findAllUsers(
+    @Query() query: { page?: number; limit?: number; search?: string },
+  ) {
     return this.adminService.findAllUsers(query);
   }
 
@@ -150,7 +152,12 @@ export class AdminController {
   @ApiOperation({ summary: 'Create a new user (admin or customer)' })
   async createUser(
     @Body(new ZodValidationPipe(CreateUserSchema))
-    body: { name: string; email: string; password: string; role: string },
+    body: {
+      name: string;
+      email: string;
+      password: string;
+      role: string;
+    },
   ) {
     return this.adminService.createUser(body);
   }
