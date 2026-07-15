@@ -125,6 +125,15 @@ export class AdminController {
     return this.adminService.updatePaymentStatus(id, body.payment_status);
   }
 
+  @Delete('orders/:id')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete an order and its items' })
+  async deleteOrder(@Param('id', UuidParamPipe) id: string) {
+    return this.adminService.deleteOrder(id);
+  }
+
   @Get('users')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin')

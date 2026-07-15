@@ -125,6 +125,35 @@ export class AdminService {
     return data;
   }
 
+  async deleteOrder(orderId: string) {
+    const { data: order } = await this.supabase
+      .from('orders')
+      .select('id')
+      .eq('id', orderId)
+      .single();
+
+    if (!order) throw new NotFoundException('Order not found');
+
+    const { error: itemsError } = await this.supabase
+      .from('order_items')
+      .delete()
+      .eq('order_id', orderId);
+
+    if (itemsError) {
+      this.logger.error(`Failed to delete order items: ${itemsError.message}`);
+      throw new InternalServerErrorException('Failed to delete order items');
+    }
+
+    const { error: orderError } = await this.supabase
+      .from('orders')
+      .delete()
+      .eq('id', orderId);
+
+    if (orderError) throw new InternalServerErrorException('An internal error occurred');
+
+    return { message: 'Order deleted successfully' };
+  }
+
   async updatePaymentStatus(orderId: string, paymentStatus: string) {
     const validStatuses = ['pending', 'paid', 'failed', 'refunded'];
     if (!validStatuses.includes(paymentStatus)) {
