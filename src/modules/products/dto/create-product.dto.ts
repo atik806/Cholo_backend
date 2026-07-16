@@ -15,9 +15,9 @@ export const CreateProductSchema = z.object({
   rating: z.number().min(0).max(5).default(0),
   review_count: z.number().int().min(0).default(0),
   stock: z.enum(['in-stock', 'low-stock', 'out-of-stock']).default('in-stock'),
-  tags: z.array(z.string()).default([]),
-  sizes: z.array(z.string()).default([]),
-  colors: z.array(ColorSchema).default([]),
+  tags: z.array(z.string()).default([]).catch([]),
+  sizes: z.array(z.string()).default([]).catch([]),
+  colors: z.array(ColorSchema).default([]).catch([]),
   is_new: z.boolean().default(false),
   is_featured: z.boolean().default(false),
 });

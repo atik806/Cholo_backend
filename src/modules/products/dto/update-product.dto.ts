@@ -15,9 +15,9 @@ export const UpdateProductSchema = z.object({
   rating: z.number().min(0).max(5).optional(),
   review_count: z.number().int().min(0).optional(),
   stock: z.enum(['in-stock', 'low-stock', 'out-of-stock']).optional(),
-  tags: z.array(z.string()).optional(),
-  sizes: z.array(z.string()).optional(),
-  colors: z.array(ColorSchema).optional(),
+  tags: z.array(z.string()).optional().catch([]),
+  sizes: z.array(z.string()).optional().catch([]),
+  colors: z.array(ColorSchema).optional().catch([]),
   is_new: z.boolean().optional(),
   is_featured: z.boolean().optional(),
 });
