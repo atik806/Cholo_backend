@@ -36,7 +36,6 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Get()
-  @CacheTTL(300)
   @ApiOperation({
     summary: 'List products with search, filter, pagination, and sort',
   })
