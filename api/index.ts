@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import helmet from 'helmet';
@@ -10,9 +11,9 @@ let app: any;
 async function bootstrap() {
   if (app) return app;
 
-  const { AppModule } = await import('../src/app.module.js');
-  const { AllExceptionsFilter } = await import('../src/common/filters/http-exception.filter.js');
-  const { TransformInterceptor } = await import('../src/common/interceptors/transform.interceptor.js');
+  const { AppModule } = require('../dist/src/app.module.js');
+  const { AllExceptionsFilter } = require('../dist/src/common/filters/http-exception.filter.js');
+  const { TransformInterceptor } = require('../dist/src/common/interceptors/transform.interceptor.js');
 
   const adapter = new ExpressAdapter(server);
   app = await NestFactory.create(AppModule, adapter);
@@ -39,7 +40,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
 
   if (process.env.ENABLE_SWAGGER === 'true') {
-    const swagger = await import('@nestjs/swagger');
+    const swagger = require('@nestjs/swagger');
     const config = new swagger.DocumentBuilder()
       .setTitle('Dhaka Wholesale E-Commerce API')
       .setDescription('E-commerce backend for Dhaka Wholesale store')
