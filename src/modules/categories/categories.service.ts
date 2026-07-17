@@ -20,7 +20,22 @@ export class CategoriesService {
 
     if (error)
       throw new InternalServerErrorException('An internal error occurred');
-    return data || [];
+
+    const categories = data || [];
+
+    const { data: products } = await this.supabase
+      .from('products')
+      .select('category_id');
+
+    const countMap = new Map<string, number>();
+    for (const p of products || []) {
+      countMap.set(p.category_id, (countMap.get(p.category_id) || 0) + 1);
+    }
+
+    return categories.map((c) => ({
+      ...c,
+      product_count: countMap.get(c.id) || 0,
+    }));
   }
 
   async findBySlug(slug: string) {
@@ -76,14 +91,16 @@ export class CategoriesService {
   }
 
   async remove(id: string) {
-    const { count } = await this.supabase
+    const { data: products } = await this.supabase
       .from('products')
-      .select('*', { count: 'exact', head: true })
+      .select('id')
       .eq('category_id', id);
 
-    if (count && count > 0) {
+    const actualCount = products?.length || 0;
+
+    if (actualCount > 0) {
       throw new ConflictException(
-        `Cannot delete category: it still has ${count} product(s) assigned to it`,
+        `Cannot delete category: it still has ${actualCount} product(s) assigned to it. Please delete or reassign all products first.`,
       );
     }
 

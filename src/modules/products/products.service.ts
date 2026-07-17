@@ -142,7 +142,7 @@ export class ProductsService {
     if (error)
       throw new InternalServerErrorException('An internal error occurred');
 
-    this.recountCategoryProducts(dto.category_id);
+    await this.recountCategoryProducts(dto.category_id);
 
     return data;
   }
@@ -173,7 +173,7 @@ export class ProductsService {
     if (error) throw new NotFoundException('Product not found');
 
     if (product?.category_id) {
-      this.recountCategoryProducts(product.category_id);
+      await this.recountCategoryProducts(product.category_id);
     }
 
     return { message: 'Product deleted successfully' };
