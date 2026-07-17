@@ -228,6 +228,7 @@ export class AuthService {
       }
 
       // Try sign-in first
+      let sessionResult: { user: any; session: any } | null = null;
       const { data: signInData, error: signInError } =
         await this.supabaseAdmin.auth.signInWithPassword({
           email: dto.email,
@@ -265,16 +266,18 @@ export class AuthService {
         if (retryError) {
           throw new UnauthorizedException('Admin login failed');
         }
-        signInData = retryData;
+        sessionResult = retryData;
+      } else {
+        sessionResult = signInData;
       }
 
-      if (!signInData?.session || !signInData.user) {
+      if (!sessionResult?.session || !sessionResult.user) {
         throw new UnauthorizedException('Admin login failed');
       }
 
       return {
         user: {
-          id: signInData.user.id,
+          id: sessionResult.user.id,
           email: dto.email,
           name: 'Admin',
           role: 'admin' as const,
@@ -283,9 +286,9 @@ export class AuthService {
           shipping_address: null,
         },
         session: {
-          access_token: signInData.session.access_token,
-          refresh_token: signInData.session.refresh_token,
-          expires_at: signInData.session.expires_at,
+          access_token: sessionResult.session.access_token,
+          refresh_token: sessionResult.session.refresh_token,
+          expires_at: sessionResult.session.expires_at,
         },
       };
     }
