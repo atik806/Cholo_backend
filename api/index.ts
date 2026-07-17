@@ -1,3 +1,5 @@
+// @ts-nocheck — this file imports from ../dist/ which only exists after nest build
+// It is compiled separately by Vercel using api/tsconfig.json, not by nest build
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import helmet from 'helmet';
