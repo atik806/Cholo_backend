@@ -1,6 +1,7 @@
 import {
   Injectable,
   NotFoundException,
+  ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import type { CreateCategoryDto } from './dto/create-category.dto.js';
@@ -47,8 +48,12 @@ export class CategoriesService {
       .select()
       .single();
 
-    if (error)
+    if (error) {
+      if (error.code === '23505') {
+        throw new ConflictException('A category with this slug already exists');
+      }
       throw new InternalServerErrorException('An internal error occurred');
+    }
     return data;
   }
 
@@ -60,7 +65,13 @@ export class CategoriesService {
       .select()
       .single();
 
-    if (error) throw new NotFoundException('Category not found');
+    if (error) {
+      if (error.code === '23505') {
+        throw new ConflictException('A category with this slug already exists');
+      }
+      throw new NotFoundException('Category not found');
+    }
+    if (!data) throw new NotFoundException('Category not found');
     return data;
   }
 
@@ -70,7 +81,14 @@ export class CategoriesService {
       .delete()
       .eq('id', id);
 
-    if (error) throw new NotFoundException('Category not found');
+    if (error) {
+      if (error.code === '23503') {
+        throw new ConflictException(
+          'Cannot delete category: it still has products assigned to it',
+        );
+      }
+      throw new NotFoundException('Category not found');
+    }
     return { message: 'Category deleted successfully' };
   }
 }
