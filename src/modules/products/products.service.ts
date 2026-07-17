@@ -142,6 +142,8 @@ export class ProductsService {
     if (error)
       throw new InternalServerErrorException('An internal error occurred');
 
+    this.recountCategoryProducts(dto.category_id);
+
     return data;
   }
 
@@ -158,12 +160,38 @@ export class ProductsService {
   }
 
   async remove(id: string) {
+    const { data: product } = await this.supabase
+      .from('products')
+      .select('category_id')
+      .eq('id', id)
+      .single();
+
     const { error } = await this.supabase
       .from('products')
       .delete()
       .eq('id', id);
     if (error) throw new NotFoundException('Product not found');
 
+    if (product?.category_id) {
+      this.recountCategoryProducts(product.category_id);
+    }
+
     return { message: 'Product deleted successfully' };
+  }
+
+  private async recountCategoryProducts(categoryId: string) {
+    try {
+      const { count } = await this.supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('category_id', categoryId);
+
+      await this.supabase
+        .from('categories')
+        .update({ product_count: count || 0 })
+        .eq('id', categoryId);
+    } catch {
+      // Trigger handles this; ignore errors here
+    }
   }
 }
