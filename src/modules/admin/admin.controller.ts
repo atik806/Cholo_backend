@@ -49,6 +49,12 @@ const CreateUserSchema = z.object({
   role: z.enum(['customer', 'admin']).default('customer'),
 });
 
+const AdminUsersQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(10),
+  search: z.string().max(200).default(''),
+});
+
 const PaginationQuerySchema = z.object({
   page: z.coerce.number().int().min(1).optional().default(1),
   limit: z.coerce.number().int().min(1).max(100).optional().default(10),
@@ -150,7 +156,8 @@ export class AdminController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all users' })
   async findAllUsers(
-    @Query() query: { page?: number; limit?: number; search?: string },
+    @Query(new ZodValidationPipe(AdminUsersQuerySchema))
+    query: { page: number; limit: number; search: string },
   ) {
     return this.adminService.findAllUsers(query);
   }

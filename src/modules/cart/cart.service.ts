@@ -15,7 +15,7 @@ export class CartService {
     const { data, error } = await this.supabase
       .from('cart_items')
       .select(
-        'id, user_id, product_id, quantity, selected_size, selected_color, created_at, products(id, name, slug, price, images, category, stock, original_price)',
+        'id, user_id, product_id, quantity, selected_size, selected_color, created_at, products(id, name, slug, price, images, category_id, stock, original_price, categories(name, slug))',
       )
       .eq('user_id', userId)
       .order('created_at', { ascending: true });

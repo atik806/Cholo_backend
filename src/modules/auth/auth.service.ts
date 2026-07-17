@@ -53,8 +53,6 @@ export class AuthService {
       throw new InternalServerErrorException('Failed to create user');
     }
 
-    await this.supabaseAdmin.from('profiles').delete().eq('email', dto.email);
-
     const { error: profileError } = await this.supabaseAdmin
       .from('profiles')
       .upsert(
@@ -75,8 +73,9 @@ export class AuthService {
       throw new InternalServerErrorException('Failed to create profile');
     }
 
+    const anonClient = createSupabaseClient();
     const { data: sessionData, error: signInError } =
-      await this.supabaseAdmin.auth.signInWithPassword({
+      await anonClient.auth.signInWithPassword({
         email: dto.email,
         password: dto.password,
       });
@@ -219,6 +218,79 @@ export class AuthService {
   }
 
   async adminLogin(dto: LoginDto) {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    // When ADMIN_EMAIL and ADMIN_PASSWORD are set, validate against them directly
+    if (adminEmail && adminPassword) {
+      if (dto.email !== adminEmail || dto.password !== adminPassword) {
+        throw new UnauthorizedException('Invalid admin credentials');
+      }
+
+      // Try sign-in first
+      let { data: signInData, error: signInError } =
+        await this.supabaseAdmin.auth.signInWithPassword({
+          email: dto.email,
+          password: dto.password,
+        });
+
+      // If the admin account doesn't exist in Supabase yet, create it
+      if (signInError) {
+        const { data: created, error: createError } =
+          await this.supabaseAdmin.auth.admin.createUser({
+            email: dto.email,
+            password: dto.password,
+            email_confirm: true,
+          });
+        if (createError) {
+          throw new UnauthorizedException('Admin login failed');
+        }
+
+        await this.supabaseAdmin.from('profiles').upsert(
+          {
+            id: created.user.id,
+            email: dto.email,
+            role: 'admin',
+            name: 'Admin',
+          },
+          { onConflict: 'id' },
+        );
+
+        // Sign in after creating the account
+        const { data: retryData, error: retryError } =
+          await this.supabaseAdmin.auth.signInWithPassword({
+            email: dto.email,
+            password: dto.password,
+          });
+        if (retryError) {
+          throw new UnauthorizedException('Admin login failed');
+        }
+        signInData = retryData;
+      }
+
+      if (!signInData?.session || !signInData.user) {
+        throw new UnauthorizedException('Admin login failed');
+      }
+
+      return {
+        user: {
+          id: signInData.user.id,
+          email: dto.email,
+          name: 'Admin',
+          role: 'admin' as const,
+          phone: null,
+          avatar_url: null,
+          shipping_address: null,
+        },
+        session: {
+          access_token: signInData.session.access_token,
+          refresh_token: signInData.session.refresh_token,
+          expires_at: signInData.session.expires_at,
+        },
+      };
+    }
+
+    // Fallback: no env vars set — any user with role=admin in profiles can log in
     const { data: signInData, error: signInError } =
       await this.supabaseAdmin.auth.signInWithPassword({
         email: dto.email,

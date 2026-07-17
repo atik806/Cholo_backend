@@ -21,21 +21,7 @@ export class CategoriesService {
     if (error)
       throw new InternalServerErrorException('An internal error occurred');
 
-    const categories = data || [];
-
-    const { data: products } = await this.supabase
-      .from('products')
-      .select('category_id');
-
-    const countMap = new Map<string, number>();
-    for (const p of products || []) {
-      countMap.set(p.category_id, (countMap.get(p.category_id) || 0) + 1);
-    }
-
-    return categories.map((c) => ({
-      ...c,
-      product_count: countMap.get(c.id) || 0,
-    }));
+    return data || [];
   }
 
   async findBySlug(slug: string) {
@@ -50,12 +36,16 @@ export class CategoriesService {
   }
 
   async create(dto: CreateCategoryDto) {
-    const slug =
+    let slug =
       dto.slug ||
       dto.name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
+
+    if (!slug) {
+      slug = 'category-' + Date.now();
+    }
 
     const { data, error } = await this.supabase
       .from('categories')
@@ -84,7 +74,7 @@ export class CategoriesService {
       if (error.code === '23505') {
         throw new ConflictException('A category with this slug already exists');
       }
-      throw new NotFoundException('Category not found');
+      throw new InternalServerErrorException(`Failed to update category: ${error.message}`);
     }
     if (!data) throw new NotFoundException('Category not found');
     return data;
@@ -109,7 +99,12 @@ export class CategoriesService {
       .delete()
       .eq('id', id);
 
-    if (error) throw new NotFoundException('Category not found');
+    if (error) {
+      if (error.code === 'PGRST116' || error.code === '23503') {
+        throw new NotFoundException('Category not found');
+      }
+      throw new InternalServerErrorException(`Failed to delete category: ${error.message}`);
+    }
     return { message: 'Category deleted successfully' };
   }
 }

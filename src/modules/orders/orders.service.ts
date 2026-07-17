@@ -109,26 +109,6 @@ export class OrdersService {
     return this.findById(order.id, userId);
   }
 
-  private async getAdminUserId(): Promise<string> {
-    const { data } = await this.supabase
-      .from('profiles')
-      .select('id')
-      .eq('role', 'admin')
-      .limit(1)
-      .single();
-    if (!data) {
-      const { data: fallback } = await this.supabase
-        .from('profiles')
-        .select('id')
-        .limit(1)
-        .single();
-      if (!fallback)
-        throw new InternalServerErrorException('No user profile found');
-      return fallback.id;
-    }
-    return data.id;
-  }
-
   async checkout(userId: string, dto: CheckoutOrderDto) {
     const productIds = dto.items.map((i) => i.product_id);
     const { data: products, error: prodError } = await this.supabase

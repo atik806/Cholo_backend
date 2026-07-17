@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Put,
@@ -36,6 +37,9 @@ export class SiteSettingsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update site settings (admin only)' })
   async update(@Body() body: Record<string, unknown>, @Request() req: any) {
+    if (!body || typeof body !== 'object') {
+      throw new BadRequestException('Request body must be a JSON object');
+    }
     const userId = req.user?.id;
     return this.siteSettingsService.updateMany(body, userId);
   }
@@ -50,6 +54,9 @@ export class SiteSettingsController {
     @Body() body: { value: Record<string, unknown> },
     @Request() req: any,
   ) {
+    if (!body || typeof body !== 'object') {
+      throw new BadRequestException('Request body must be a JSON object');
+    }
     const userId = req.user?.id;
     return this.siteSettingsService.update(key, body.value, userId);
   }

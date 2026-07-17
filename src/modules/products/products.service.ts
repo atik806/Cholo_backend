@@ -128,10 +128,21 @@ export class ProductsService {
   }
 
   async create(dto: CreateProductDto) {
-    const slug = dto.name
+    let slug = dto.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
+
+    const { data: existing } = await this.supabase
+      .from('products')
+      .select('id')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (existing) {
+      const suffix = Date.now().toString(36);
+      slug = `${slug}-${suffix}`;
+    }
 
     const { data, error } = await this.supabase
       .from('products')
@@ -148,9 +159,32 @@ export class ProductsService {
   }
 
   async update(id: string, dto: UpdateProductDto) {
+    let updatedData: Record<string, any> = { ...dto };
+
+    if (dto.name) {
+      let newSlug = (dto.name as string)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+      const { data: existingSlug } = await this.supabase
+        .from('products')
+        .select('id')
+        .eq('slug', newSlug)
+        .neq('id', id)
+        .maybeSingle();
+
+      if (existingSlug) {
+        const suffix = Date.now().toString(36);
+        newSlug = `${newSlug}-${suffix}`;
+      }
+
+      updatedData.slug = newSlug;
+    }
+
     const { data, error } = await this.supabase
       .from('products')
-      .update(dto)
+      .update(updatedData)
       .eq('id', id)
       .select()
       .single();

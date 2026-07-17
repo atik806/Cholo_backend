@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import helmet from 'helmet';

@@ -202,16 +202,6 @@ export class AdminService {
 
     if (!order) throw new NotFoundException('Order not found');
 
-    const { error: itemsError } = await this.supabase
-      .from('order_items')
-      .delete()
-      .eq('order_id', orderId);
-
-    if (itemsError) {
-      this.logger.error(`Failed to delete order items: ${itemsError.message}`);
-      throw new InternalServerErrorException('Failed to delete order items');
-    }
-
     const { error: orderError } = await this.supabase
       .from('orders')
       .delete()
@@ -357,9 +347,7 @@ export class AdminService {
       .delete()
       .eq('id', userId);
     if (profileError) {
-      this.logger.error(
-        `Failed to delete profile for user ${userId}: ${profileError.message}`,
-      );
+      throw new InternalServerErrorException('Failed to delete user profile');
     }
 
     return { message: 'User deleted successfully' };

@@ -6,7 +6,7 @@ const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'avif']);
 @Injectable()
 export class UploadService {
   private supabase = createSupabaseAdminClient();
-  private bucketInitialized = false;
+  private bucketInitPromise: Promise<void> | null = null;
 
   async uploadImage(file: Express.Multer.File): Promise<string> {
     const bucketName = 'product-images';
@@ -18,13 +18,11 @@ export class UploadService {
       );
     }
 
-    if (!this.bucketInitialized) {
-      const { data: buckets } = await this.supabase.storage.listBuckets();
-      const bucketExists = buckets?.some((b) => b.name === bucketName);
-      if (!bucketExists) {
-        await this.supabase.storage.createBucket(bucketName, { public: true });
-      }
-      this.bucketInitialized = true;
+    if (this.bucketInitPromise) {
+      await this.bucketInitPromise;
+    } else {
+      this.bucketInitPromise = this.ensureBucket(bucketName);
+      await this.bucketInitPromise;
     }
 
     const fileName = `${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
@@ -82,5 +80,13 @@ export class UploadService {
       .getPublicUrl(fileName);
 
     return publicUrl.publicUrl;
+  }
+
+  private async ensureBucket(bucketName: string): Promise<void> {
+    const { data: buckets } = await this.supabase.storage.listBuckets();
+    const bucketExists = buckets?.some((b) => b.name === bucketName);
+    if (!bucketExists) {
+      await this.supabase.storage.createBucket(bucketName, { public: true });
+    }
   }
 }
