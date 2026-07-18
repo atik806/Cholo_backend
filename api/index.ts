@@ -69,11 +69,10 @@ export default async function handler(req: any, res: any) {
     await bootstrap();
     server(req, res);
   } catch (err: any) {
-    console.error('[handler] Error:', err);
+    console.error('[handler] Bootstrap error:', err);
     res.status(500).json({
       error: 'Function invocation failed',
       message: err?.message || String(err),
-      stack: err?.stack,
     });
   }
 }
