@@ -347,7 +347,7 @@ export class AuthService {
 
     if (upsertError) {
       this.logger.error(
-        `Failed to sync OAuth profile (attempt 1): ${upsertError.message} (${upsertError.code})`,
+        `Failed to sync OAuth profile (attempt 1) for user ${userId}: ${upsertError.message} (${upsertError.code}). Check that SUPABASE_SERVICE_ROLE_KEY is set in Vercel env vars.`,
       );
 
       // Retry once after a short delay

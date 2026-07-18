@@ -12,8 +12,11 @@ export function createSupabaseClient(): SupabaseClient {
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
+    const missing: string[] = [];
+    if (!supabaseUrl) missing.push('SUPABASE_URL');
+    if (!supabaseAnonKey) missing.push('SUPABASE_ANON_KEY');
     throw new Error(
-      'SUPABASE_URL and SUPABASE_ANON_KEY must be set in environment variables',
+      `Missing environment variables: ${missing.join(' and ')}. Set them in your .env file or Vercel project settings.`,
     );
   }
 
@@ -52,8 +55,11 @@ export function createSupabaseAdminClient(): SupabaseClient {
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseServiceRoleKey) {
+    const missing: string[] = [];
+    if (!supabaseUrl) missing.push('SUPABASE_URL');
+    if (!supabaseServiceRoleKey) missing.push('SUPABASE_SERVICE_ROLE_KEY');
     throw new Error(
-      'SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in environment variables',
+      `Missing environment variables: ${missing.join(' and ')}. Set them in your .env file or Vercel project settings.`,
     );
   }
 
