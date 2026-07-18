@@ -65,6 +65,15 @@ async function bootstrap() {
 }
 
 export default async function handler(req: any, res: any) {
-  await bootstrap();
-  server(req, res);
+  try {
+    await bootstrap();
+    server(req, res);
+  } catch (err: any) {
+    console.error('[handler] Error:', err);
+    res.status(500).json({
+      error: 'Function invocation failed',
+      message: err?.message || String(err),
+      stack: err?.stack,
+    });
+  }
 }
