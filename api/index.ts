@@ -13,18 +13,10 @@ let app: any;
 async function bootstrap() {
   if (app) return app;
 
-  const required = [
-    'SUPABASE_URL',
-    'SUPABASE_ANON_KEY',
-    'SUPABASE_SERVICE_ROLE_KEY',
-    'ADMIN_EMAIL',
-    'ADMIN_PASSWORD',
-  ];
-  const missing = required.filter((key) => !process.env[key]);
-  if (missing.length > 0) {
-    const msg = `Missing required environment variables in Vercel: ${missing.join(', ')}. Add them in your Vercel project dashboard (Settings > Environment Variables).`;
-    console.error(msg);
-    throw new Error(msg);
+  const envCheck = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'ADMIN_EMAIL', 'ADMIN_PASSWORD']
+    .filter(k => !process.env[k]);
+  if (envCheck.length) {
+    console.warn(`[bootstrap] Missing env vars (will fail downstream): ${envCheck.join(', ')}`);
   }
 
   const { AppModule } = await import(path.join(__dirname, '..', 'dist', 'src', 'app.module.js'));
