@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import type { CreateProductDto } from './dto/create-product.dto.js';
 import type { UpdateProductDto } from './dto/update-product.dto.js';
@@ -16,6 +17,7 @@ const PRODUCT_DETAIL_SELECT = '*, categories(name, slug)';
 
 @Injectable()
 export class ProductsService {
+  private readonly logger = new Logger(ProductsService.name);
   private supabase = createSupabaseAdminClient();
 
   async findAll(query: QueryProductsDto) {
@@ -30,17 +32,24 @@ export class ProductsService {
       limit = 12,
     } = query;
 
-    // Inner join only when filtering by category so orphaned products still list
-    const select = category
-      ? 'id, slug, name, price, original_price, images, rating, review_count, stock, tags, sizes, colors, is_new, is_featured, created_at, category_id, categories!inner(name, slug)'
-      : PRODUCT_LIST_SELECT;
+    let resolvedCategoryId: string | null = null;
+    if (category) {
+      const { data: cat } = await this.supabase
+        .from('categories')
+        .select('id')
+        .eq('slug', category)
+        .maybeSingle();
+      resolvedCategoryId = cat?.id ?? null;
+    }
 
     let dbQuery = this.supabase
       .from('products')
-      .select(select, { count: 'exact' });
+      .select(PRODUCT_LIST_SELECT, { count: 'exact' });
 
-    if (category) {
-      dbQuery = dbQuery.eq('categories.slug', category);
+    if (resolvedCategoryId) {
+      dbQuery = dbQuery.eq('category_id', resolvedCategoryId);
+    } else if (category && !resolvedCategoryId) {
+      return { data: [], meta: { total: 0, page, limit, totalPages: 0 } };
     }
 
     if (search) {
@@ -151,29 +160,16 @@ export class ProductsService {
   }
 
   async getStockStats() {
-    const [
-      { count: total },
-      { count: lowStock },
-      { count: outOfStock },
-    ] = await Promise.all([
-      this.supabase
-        .from('products')
-        .select('id', { count: 'exact', head: true }),
-      this.supabase
-        .from('products')
-        .select('id', { count: 'exact', head: true })
-        .eq('stock', 'low-stock'),
-      this.supabase
-        .from('products')
-        .select('id', { count: 'exact', head: true })
-        .eq('stock', 'out-of-stock'),
-    ]);
+    const { data: all } = await this.supabase
+      .from('products')
+      .select('stock');
 
-    return {
-      total: total || 0,
-      lowStock: lowStock || 0,
-      outOfStock: outOfStock || 0,
-    };
+    const allProducts = all ?? [];
+    const total = allProducts.length;
+    const lowStock = allProducts.filter((p) => p.stock === 'low-stock').length;
+    const outOfStock = allProducts.filter((p) => p.stock === 'out-of-stock').length;
+
+    return { total, lowStock, outOfStock };
   }
 
   async create(dto: CreateProductDto) {
@@ -199,10 +195,10 @@ export class ProductsService {
       .select()
       .single();
 
-    if (error)
+    if (error) {
+      this.logger.error(`Product create failed: ${error.message} (${error.code})`);
       throw new InternalServerErrorException('An internal error occurred');
-
-    await this.recountCategoryProducts(dto.category_id);
+    }
 
     return data;
   }
@@ -243,38 +239,14 @@ export class ProductsService {
   }
 
   async remove(id: string) {
-    const { data: product } = await this.supabase
-      .from('products')
-      .select('category_id')
-      .eq('id', id)
-      .single();
-
     const { error } = await this.supabase
       .from('products')
       .delete()
       .eq('id', id);
     if (error) throw new NotFoundException('Product not found');
 
-    if (product?.category_id) {
-      await this.recountCategoryProducts(product.category_id);
-    }
-
     return { message: 'Product deleted successfully' };
   }
 
-  private async recountCategoryProducts(categoryId: string) {
-    try {
-      const { count } = await this.supabase
-        .from('products')
-        .select('id', { count: 'exact', head: true })
-        .eq('category_id', categoryId);
 
-      await this.supabase
-        .from('categories')
-        .update({ product_count: count || 0 })
-        .eq('id', categoryId);
-    } catch {
-      // Trigger handles this; ignore errors here
-    }
-  }
 }

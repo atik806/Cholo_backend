@@ -221,6 +221,11 @@ export class AuthService {
     const adminEmail = process.env.ADMIN_EMAIL;
     const adminPassword = process.env.ADMIN_PASSWORD;
 
+    // Use a temporary anon client for sign-in so we never pollute
+    // the shared admin client's auth state. The shared admin client
+    // must stay unauthenticated so it bypasses RLS via service_role key.
+    const signInClient = createSupabaseClient();
+
     // When ADMIN_EMAIL and ADMIN_PASSWORD are set, validate against them directly
     if (adminEmail && adminPassword) {
       if (dto.email !== adminEmail || dto.password !== adminPassword) {
@@ -230,7 +235,7 @@ export class AuthService {
       // Try sign-in first
       let sessionResult: { user: any; session: any } | null = null;
       const { data: signInData, error: signInError } =
-        await this.supabaseAdmin.auth.signInWithPassword({
+        await signInClient.auth.signInWithPassword({
           email: dto.email,
           password: dto.password,
         });
@@ -259,7 +264,7 @@ export class AuthService {
 
         // Sign in after creating the account
         const { data: retryData, error: retryError } =
-          await this.supabaseAdmin.auth.signInWithPassword({
+          await signInClient.auth.signInWithPassword({
             email: dto.email,
             password: dto.password,
           });
@@ -295,7 +300,7 @@ export class AuthService {
 
     // Fallback: no env vars set — any user with role=admin in profiles can log in
     const { data: signInData, error: signInError } =
-      await this.supabaseAdmin.auth.signInWithPassword({
+      await signInClient.auth.signInWithPassword({
         email: dto.email,
         password: dto.password,
       });

@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import type { CreateCategoryDto } from './dto/create-category.dto.js';
 import type { UpdateCategoryDto } from './dto/update-category.dto.js';
@@ -10,6 +11,7 @@ import { createSupabaseAdminClient } from '../../config/supabase.config.js';
 
 @Injectable()
 export class CategoriesService {
+  private readonly logger = new Logger(CategoriesService.name);
   private supabase = createSupabaseAdminClient();
 
   async findAll() {
@@ -71,28 +73,32 @@ export class CategoriesService {
       .single();
 
     if (error) {
+      this.logger.error(`Failed to update category ${id}: code=${error.code} message=${error.message}`);
       if (error.code === '23505') {
         throw new ConflictException('A category with this slug already exists');
       }
-      throw new InternalServerErrorException(
-        `Failed to update category: ${error.message}`,
-      );
+      throw new InternalServerErrorException('An internal error occurred');
     }
     if (!data) throw new NotFoundException('Category not found');
     return data;
   }
 
   async remove(id: string) {
-    const { data: products } = await this.supabase
+    const { data: products, error: countError } = await this.supabase
       .from('products')
       .select('id')
       .eq('category_id', id);
+
+    if (countError) {
+      this.logger.error(`Failed to count products for category ${id}: ${countError.message}`);
+      throw new InternalServerErrorException('An internal error occurred');
+    }
 
     const actualCount = products?.length || 0;
 
     if (actualCount > 0) {
       throw new ConflictException(
-        `Cannot delete category: it still has ${actualCount} product(s) assigned to it. Please delete or reassign all products first.`,
+        `Cannot delete category: it still has ${actualCount} product(s) assigned to it.`,
       );
     }
 
@@ -102,12 +108,13 @@ export class CategoriesService {
       .eq('id', id);
 
     if (error) {
-      if (error.code === 'PGRST116' || error.code === '23503') {
-        throw new NotFoundException('Category not found');
+      this.logger.error(`Failed to delete category ${id}: code=${error.code} message=${error.message}`);
+      if (error.code === '23503') {
+        throw new ConflictException(
+          'Cannot delete category: it still has products assigned to it.',
+        );
       }
-      throw new InternalServerErrorException(
-        `Failed to delete category: ${error.message}`,
-      );
+      throw new InternalServerErrorException('An internal error occurred');
     }
     return { message: 'Category deleted successfully' };
   }
